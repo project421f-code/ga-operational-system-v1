@@ -81,9 +81,11 @@
 
 | Link | URL |
 |------|-----|
-| **Web App** | Lihat deployment terbaru |
-| **Halaman Publik** | `?page=cek-aset` |
-| **Survey GA** | `?page=survey` |
+| **Web App** | `<deployment-url>/exec?page=app` |
+| **Halaman Publik** | `<deployment-url>/exec?page=cek-aset` |
+| **Survey GA** | `<deployment-url>/exec?page=survey` |
+
+> *Ganti `<deployment-url>` dengan URL deployment Apps Script kamu.*
 
 ---
 
