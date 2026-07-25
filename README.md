@@ -54,7 +54,7 @@
 
 | Lapisan | Teknologi |
 |---------|-----------|
-| **Database** | Google Sheets (13 sheets) |
+| **Database** | Google Sheets (15+ sheets) |
 | **Backend** | Google Apps Script (V8) |
 | **Frontend** | HTML + CSS + Vanilla JavaScript |
 | **Komunikasi** | `google.script.run` Async RPC |
@@ -141,7 +141,7 @@ ga-operational-system-v1/
 ├── .clasp.json               # Konfigurasi clasp
 ├── Code.gs                   # Entry point web app + routing API
 ├── Helpers.gs                # Config, utility, session, WA sender
-├── initDatabase.gs           # Inisialisasi database (13 sheets + seed)
+├── initDatabase.gs           # Inisialisasi database (15+ sheets + seed)
 ├── API_Auth.gs               # Autentikasi & manajemen user
 ├── API_Booking.gs            # Peminjaman aset + halaman publik
 ├── API_Housekeeping.gs       # Housekeeping: checklist, audit, GC, KPI
@@ -150,7 +150,6 @@ ga-operational-system-v1/
 ├── API_Security.gs           # Patroli, inspeksi, checkpoint, jadwal
 ├── API_Survey.gs             # Survey GA: konfigurasi, submit, stats
 ├── _setup_wa_token.gs        # Setup token WhatsApp
-├── index.html                # Frontend ALL-IN-ONE (~5000 baris)
 ├── index.html                # Frontend UI (semua halaman dalam satu file)
 │
 ├── PRD_GA_v8.0.md            # Product Requirement Document
