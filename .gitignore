@@ -4,3 +4,15 @@
 node_modules/
 *.local
 nul
+
+# Backup
+.clasp.json.backup
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temp debug
+_debug_*.gs

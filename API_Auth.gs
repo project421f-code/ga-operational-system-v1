@@ -113,7 +113,7 @@ function getAllUsers() {
     var user = getActiveUserSession();
     requireRole(user.role, [CONFIG.ROLES.ADMIN]);
 
-    var data = getSheetData(CONFIG.SHEETS.USER_LIST);
+    var data = getCachedSheetData(CONFIG.SHEETS.USER_LIST, 300);
     // Jangan kirim password ke frontend
     data = data.map(function(d) {
       return {
@@ -256,7 +256,7 @@ function deleteUser(userId) {
  */
 function getStaffByTeam(teamName) {
   try {
-    var data = getSheetData(CONFIG.SHEETS.USER_LIST);
+    var data = getCachedSheetData(CONFIG.SHEETS.USER_LIST, 300);
     var filtered = data.filter(function(d) {
       return d.status === 'Aktif' && (teamName ? d.tim === teamName : true);
     }).map(function(d) {

@@ -144,7 +144,7 @@ function saveBooking(payload) {
 function getAllBookings(filters) {
   try {
     var user = getActiveUserSession();
-    var data = getSheetData(CONFIG.SHEETS.ASSET_BOOKING);
+    var data = getCachedSheetData(CONFIG.SHEETS.ASSET_BOOKING, 30);
     if (filters) {
       if (filters.status && filters.status !== 'Semua') data = data.filter(function(d) { return d.status_booking === filters.status; });
       if (filters.nama_aset && filters.nama_aset !== 'Semua') data = data.filter(function(d) { return d.nama_aset === filters.nama_aset; });
@@ -154,7 +154,19 @@ function getAllBookings(filters) {
     data = data.map(function(d) {
       return { timestamp: formatDateId(d.timestamp), id_booking: d.id_booking, nama_peminjam: d.nama_peminjam, divisi: d.divisi || '', no_wa: d.no_wa, nama_aset: d.nama_aset, waktu_mulai: formatDateId(d.waktu_mulai), waktu_selesai: formatDateId(d.waktu_selesai), konsumsi: d.konsumsi || '', status_booking: d.status_booking, alasan_gagal: d.alasan_gagal, km_awal: d.km_awal, km_akhir: d.km_akhir };
     });
-    return successResponse(data);
+    // ─── PAGINATION ────────────────────────────────────────
+    // Default pagination: limit 50, offset 0
+    var reqLimit = filters && filters.limit ? filters.limit : 50;
+    var reqOffset = filters && filters.offset ? filters.offset : 0;
+    var pagination = applyPagination(data, reqLimit, reqOffset);
+    
+    return successResponse({
+      data: pagination.paginatedData,
+      total: pagination.total,
+      limit: pagination.limit,
+      offset: pagination.offset,
+      hasMore: pagination.hasMore
+    });
   } catch (e) { return errorResponse(e.message); }
 }
 
@@ -188,7 +200,7 @@ function cancelBooking(bookingId) {
 
 // ─── ASSET LIST ────────────────────────────────────────────
 
-function getAllAssetList() { try { var data = getSheetData(CONFIG.SHEETS.ASSET_LIST); return successResponse(data); } catch (e) { return errorResponse(e.message); } }
+function getAllAssetList() { try { var data = getCachedSheetData(CONFIG.SHEETS.ASSET_LIST, 1800); return successResponse(data); } catch (e) { return errorResponse(e.message); } }
 function saveAssetList(payload) {
   try {
     var user = getActiveUserSession(); requireRole(user.role, [CONFIG.ROLES.ADMIN]);
@@ -203,7 +215,7 @@ function saveAssetList(payload) {
 function deleteAssetItem(rowIndex) {
   try { var user = getActiveUserSession(); requireRole(user.role, [CONFIG.ROLES.ADMIN]); return withLock(function() { var sheet = getSheet(CONFIG.SHEETS.ASSET_LIST); sheet.deleteRow(rowIndex); return successResponse(null, 'Aset berhasil dihapus.'); }); } catch (e) { return errorResponse(e.message); }
 }
-function getAvailableAssets() { try { var data = getSheetData(CONFIG.SHEETS.ASSET_LIST); return successResponse(data.filter(function(d) { return d.status_operasional === 'Tersedia'; })); } catch (e) { return errorResponse(e.message); } }
+function getAvailableAssets() { try { var data = getCachedSheetData(CONFIG.SHEETS.ASSET_LIST, 1800); return successResponse(data.filter(function(d) { return d.status_operasional === 'Tersedia'; })); } catch (e) { return errorResponse(e.message); } }
 
 // ╔══════════════════════════════════════════════════════════╗
 // ║    PUBLIC AVAILABILITY & BOOKING                         ║
@@ -219,9 +231,9 @@ function getPublicAssetsAvailability(tanggal) {
     var startOfDay = new Date(dateObj); startOfDay.setHours(0, 0, 0, 0);
     var endOfDay = new Date(dateObj); endOfDay.setHours(23, 59, 59, 999);
     var startTime = startOfDay.getTime(), endTime = endOfDay.getTime();
-    var allAssets = getSheetData(CONFIG.SHEETS.ASSET_LIST);
+    var allAssets = getCachedSheetData(CONFIG.SHEETS.ASSET_LIST, 1800);
     var availableAssets = allAssets.filter(function(a) { return a.status_operasional === 'Tersedia'; });
-    var allBookings = getSheetData(CONFIG.SHEETS.ASSET_BOOKING);
+    var allBookings = getCachedSheetData(CONFIG.SHEETS.ASSET_BOOKING, 15);
     var dayBookings = allBookings.filter(function(b) {
       if (b.status_booking !== 'Approved (Auto)') return false;
       var bStart = new Date(b.waktu_mulai).getTime(), bEnd = new Date(b.waktu_selesai).getTime();
@@ -326,7 +338,7 @@ function generatePublicPageHtml(tanggal, wa, bookingResult) {
   // Build recent bookings table
   var recentBookingsHtml = '';
   try {
-    var allBookings = getSheetData(CONFIG.SHEETS.ASSET_BOOKING);
+    var allBookings = getCachedSheetData(CONFIG.SHEETS.ASSET_BOOKING, 30);
     // Sort by timestamp descending (newest first)
     allBookings.sort(function(a, b) { return new Date(b.timestamp) - new Date(a.timestamp); });
     // Limit to 5 rows for display, but allow scrolling for more

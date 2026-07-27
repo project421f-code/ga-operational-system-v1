@@ -6,11 +6,11 @@
   <meta name="description" content="GA Operations Management System - Sistem Otomatisasi, Integrasi & Manajemen Keamanan Operasional General Affair">
   <title>GA Operations | General Affair</title>
 
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+  <!-- QR Code (loaded always) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-  <!-- QR Code -->
+  <!-- Chart.js (LAZY LOADED — only when dashboard/survey page opens) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
@@ -19,8 +19,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="GA-Ops">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%236366f1'/%3E%3Cstop offset='100%25' stop-color='%238b5cf6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='180' height='180' rx='36' fill='url(%23g)'/%3E%3Ctext x='90' y='118' font-family='system-ui,sans-serif' font-size='96' font-weight='800' text-anchor='middle' fill='white'%3EGA%3C/text%3E%3C/svg%3E">
-  <link rel="mask-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='36' fill='%236366f1'/%3E%3Ctext x='90' y='118' font-family='system-ui,sans-serif' font-size='96' font-weight='800' text-anchor='middle' fill='white'%3EGA%3C/text%3E%3C/svg%3E" color="#6366f1">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%236366f1'/%3E%3Cstop offset='100%25' stop-color='%238b5cf6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='180' height='180' rx='36' fill='url(%23g)'/%3E%3Ctext x='90' y='98' font-family='system-ui,sans-serif' font-size='58' font-weight='800' text-anchor='middle' fill='white' letter-spacing='3'%3EGAS%3C/text%3E%3Ctext x='90' y='134' font-family='system-ui,sans-serif' font-size='13' font-weight='500' text-anchor='middle' fill='%23c4b5fd' opacity='0.9'%3EOperations%3C/text%3E%3C/svg%3E">
+  <link rel="mask-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='36' fill='%236366f1'/%3E%3Ctext x='90' y='98' font-family='system-ui,sans-serif' font-size='58' font-weight='800' text-anchor='middle' fill='white' letter-spacing='3'%3EGAS%3C/text%3E%3Ctext x='90' y='134' font-family='system-ui,sans-serif' font-size='13' font-weight='500' text-anchor='middle' fill='white' opacity='0.9'%3EOperations%3C/text%3E%3C/svg%3E" color="#6366f1">
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,8 +38,8 @@
       "background_color": "#0a0f1e",
       "theme_color": "#6366f1",
       "icons": [
-        {"src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 192 192'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%236366f1'/%3E%3Cstop offset='100%25' stop-color='%238b5cf6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='192' height='192' rx='36' fill='url(%23g)'/%3E%3Ctext x='96' y='126' font-family='system-ui,sans-serif' font-size='96' font-weight='800' text-anchor='middle' fill='white'%3EGA%3C/text%3E%3C/svg%3E", "sizes": "192x192", "type": "image/svg+xml"},
-        {"src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%236366f1'/%3E%3Cstop offset='100%25' stop-color='%238b5cf6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='512' height='512' rx='100' fill='url(%23g)'/%3E%3Ctext x='256' y='336' font-family='system-ui,sans-serif' font-size='256' font-weight='800' text-anchor='middle' fill='white'%3EGA%3C/text%3E%3C/svg%3E", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any"}
+        {"src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 192 192'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%236366f1'/%3E%3Cstop offset='100%25' stop-color='%238b5cf6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='192' height='192' rx='36' fill='url(%23g)'/%3E%3Ctext x='96' y='104' font-family='system-ui,sans-serif' font-size='64' font-weight='800' text-anchor='middle' fill='white' letter-spacing='3'%3EGAS%3C/text%3E%3Ctext x='96' y='142' font-family='system-ui,sans-serif' font-size='14' font-weight='500' text-anchor='middle' fill='%23c4b5fd' opacity='0.9'%3EOperations%3C/text%3E%3C/svg%3E", "sizes": "192x192", "type": "image/svg+xml"},
+        {"src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%236366f1'/%3E%3Cstop offset='100%25' stop-color='%238b5cf6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='512' height='512' rx='100' fill='url(%23g)'/%3E%3Ctext x='256' y='280' font-family='system-ui,sans-serif' font-size='180' font-weight='800' text-anchor='middle' fill='white' letter-spacing='8'%3EGAS%3C/text%3E%3Ctext x='256' y='380' font-family='system-ui,sans-serif' font-size='36' font-weight='500' text-anchor='middle' fill='%23c4b5fd' opacity='0.9'%3EOperations%3C/text%3E%3C/svg%3E", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any"}
       ]
     };
     var b = new Blob([JSON.stringify(m)], {type:'application/json'});
@@ -47,8 +47,7 @@
     l.rel = 'manifest';
     l.href = URL.createObjectURL(b);
     document.head.appendChild(l);
-  })();
-  </script>
+  })();  </script>
 
 <style>
 /* ================================================================
@@ -133,7 +132,7 @@ a { color: var(--blue); text-decoration: none; }
   align-items: center; justify-content: center;
   z-index: 9999; transition: opacity 0.5s ease;
 }
-#loading-screen.hidden { opacity: 0; pointer-events: none; }
+#loading-screen.hidden { display: none; }
 .loading-logo {
   width: 80px; height: 80px;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
@@ -1073,6 +1072,25 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   <div class="loading-bar"><div class="loading-bar-inner"></div></div>
 </div>
 
+<!-- ═══ SAFETY FALLBACK ═══
+     Jika script block utama gagal (error JS), fallback ini akan
+     force-hide loading screen dan tampilkan login screen setelah 8 detik.
+     ══════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  var ls = document.getElementById('loading-screen');
+  if (!ls) return;
+  
+  setTimeout(function() {
+    if (!ls.classList.contains('hidden')) {
+      ls.classList.add('hidden');
+      var login = document.getElementById('login-screen');
+      if (login) login.classList.add('show');
+    }
+  }, 8000);
+})();
+</script>
+
 <!-- ═══════════════════════════════════════════════════════════
      TOAST CONTAINER
      ═══════════════════════════════════════════════════════════ -->
@@ -1426,8 +1444,9 @@ textarea.form-control { resize: vertical; min-height: 80px; }
       </div>
     </header>
 
-    <div id="content-area">
+    <div id="content-area" class="page-container"></div>
 
+      <template id="page-templates">
       <!-- ═══ PAGE: DASHBOARD ═══════════════════════════════ -->
       <div class="page active" id="page-dashboard">
         <div class="stats-grid" id="dashboard-stats">
@@ -2358,7 +2377,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
         </div>
       </div>
 
-    </div><!-- end content-area -->
+    </template><!-- end page-templates -->
   </div><!-- end main-content -->
 </div><!-- end app -->
 
@@ -2600,6 +2619,14 @@ function initApp() {
   if (localStorage.getItem('ga_darkmode') === 'true') {
     APP.darkMode = true;
     document.documentElement.setAttribute('data-theme', 'dark');
+  }
+
+  // ─── LAZY LOAD PAGE TEMPLATES ──────────────────────────
+  // Inject page HTML from <template> ke #content-area
+  // Template berisi semua 26 halaman, tapi tidak di-render sampai di-clone
+  var pageTpl = document.getElementById('page-templates');
+  if (pageTpl) {
+    document.getElementById('content-area').appendChild(pageTpl.content.cloneNode(true));
   }
 
   // Load dashboard
@@ -3021,38 +3048,92 @@ function setBtnLoading(id, loading, labelSave) {
   btn.innerHTML = loading ? '⏳ Memproses...' : (labelSave || '💾 Simpan');
 }
 
+// ─── DEBOUNCE ──────────────────────────────────────────────────
+// Mencegah API call berlebihan saat user mengetik/memfilter
+function debounce(fn, ms) {
+  var timer;
+  return function() {
+    var ctx = this, args = arguments;
+    clearTimeout(timer);
+    timer = setTimeout(function() { fn.apply(ctx, args); }, ms || 300);
+  };
+}
+
 // ─── DASHBOARD ──────────────────────────────────────────────
+// ─── LAZY CHART.JS LOADER ──────────────────────────────────
+// Chart.js (~600KB) hanya di-download saat dashboard atau survey dibuka
+var _chartJSCallbacks = [];
+var _chartJSLoading = false;
+function loadChartJS(callback) {
+  // Sudah ada? langsung jalan
+  if (window.Chart && window.Chart.register) {
+    if (callback) setTimeout(callback, 10);
+    return;
+  }
+  // Queue callback (support multiple concurrent requests)
+  if (callback) _chartJSCallbacks.push(callback);
+  if (_chartJSLoading) return;
+  _chartJSLoading = true;
+  
+  function fireCallbacks() {
+    _chartJSLoading = false;
+    var cbs = _chartJSCallbacks.slice();
+    _chartJSCallbacks = [];
+    cbs.forEach(function(cb) { try { cb(); } catch(e) { console.warn('Chart callback error:', e); } });
+  }
+  
+  // Load Chart.js
+  var s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+  s.onload = function() {
+    // Load plugin datalabels
+    var s2 = document.createElement('script');
+    s2.src = 'https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2';
+    s2.onload = fireCallbacks;
+    s2.onerror = fireCallbacks;
+    document.head.appendChild(s2);
+  };
+  s.onerror = function() {
+    console.warn('Chart.js gagal di-load, chart tidak tersedia');
+    fireCallbacks();
+  };
+  document.head.appendChild(s);
+}
+
 function loadDashboard() {
-  apiCall('getDashboardStats', [], function(data) {
-    var m = data.maintenance;
-    document.getElementById('ds-total-tiket').textContent = m.total;
-    document.getElementById('ds-tiket-sub').textContent = m.completed + ' selesai, ' + m.inProgress + ' proses';
-    document.getElementById('ds-sla-rate').textContent = m.slaRate + '%';
-    document.getElementById('ds-sla-sub').textContent = m.slaAchieved + ' achieved / ' + (m.slaAchieved + m.slaBreached) + ' total';
-    document.getElementById('ds-booking').textContent = data.booking.active;
-    document.getElementById('ds-patroli').textContent = data.security.totalPatrols;
-    document.getElementById('ds-checklist').textContent = data.housekeeping.totalChecklists;
-    document.getElementById('ds-checklist-sub').textContent = data.housekeeping.complianceRate + '% on schedule';
-    document.getElementById('ds-open').textContent = m.open;
+  // Load Chart.js dulu (kalo belum ada), baru fetch data & render
+  loadChartJS(function() {
+    apiCall('getDashboardStats', [], function(data) {
+      var m = data.maintenance;
+      document.getElementById('ds-total-tiket').textContent = m.total;
+      document.getElementById('ds-tiket-sub').textContent = m.completed + ' selesai, ' + m.inProgress + ' proses';
+      document.getElementById('ds-sla-rate').textContent = m.slaRate + '%';
+      document.getElementById('ds-sla-sub').textContent = m.slaAchieved + ' achieved / ' + (m.slaAchieved + m.slaBreached) + ' total';
+      document.getElementById('ds-booking').textContent = data.booking.active;
+      document.getElementById('ds-patroli').textContent = data.security.totalPatrols;
+      document.getElementById('ds-checklist').textContent = data.housekeeping.totalChecklists;
+      document.getElementById('ds-checklist-sub').textContent = data.housekeeping.complianceRate + '% on schedule';
+      document.getElementById('ds-open').textContent = m.open;
 
-    // Update open badge
-    var badge = document.getElementById('badge-open');
-    if (m.open > 0) { badge.style.display = ''; badge.textContent = m.open; }
-    else { badge.style.display = 'none'; }
-    var bnavBadge = document.getElementById('bnav-badge-open');
-    if (bnavBadge) {
-      if (m.open > 0) { bnavBadge.style.display = ''; bnavBadge.textContent = m.open; }
-      else { bnavBadge.style.display = 'none'; }
-    }
-    var mgBadge = document.getElementById('mg-badge-open');
-    if (mgBadge) {
-      if (m.open > 0) { mgBadge.style.display = ''; mgBadge.textContent = m.open; }
-      else { mgBadge.style.display = 'none'; }
-    }
+      // Update open badge
+      var badge = document.getElementById('badge-open');
+      if (m.open > 0) { badge.style.display = ''; badge.textContent = m.open; }
+      else { badge.style.display = 'none'; }
+      var bnavBadge = document.getElementById('bnav-badge-open');
+      if (bnavBadge) {
+        if (m.open > 0) { bnavBadge.style.display = ''; bnavBadge.textContent = m.open; }
+        else { bnavBadge.style.display = 'none'; }
+      }
+      var mgBadge = document.getElementById('mg-badge-open');
+      if (mgBadge) {
+        if (m.open > 0) { mgBadge.style.display = ''; mgBadge.textContent = m.open; }
+        else { mgBadge.style.display = 'none'; }
+      }
 
-    // Charts
-    renderCategoryChart(data.charts.categoryCount);
-    renderStatusChart(data.charts.statusCount);
+      // Charts
+      renderCategoryChart(data.charts.categoryCount);
+      renderStatusChart(data.charts.statusCount);
+    });
   });
 }
 
@@ -3100,6 +3181,7 @@ function renderStatusChart(statusData) {
 
 // ─── SURVEY RATING DASHBOARD ───────────────────────────────────
 function loadSurveyDashboard() {
+  loadChartJS(function() {
   apiCall('getRatingSurveyStats', [], function(data) {
     var o = data.overview;
     document.getElementById('sv-avg-rating').textContent = o.avg_rating.toFixed(1);
@@ -3117,6 +3199,7 @@ function loadSurveyDashboard() {
 
     // Table
     renderSurveyTable(data.details);
+  });
   });
 }
 
@@ -3312,6 +3395,7 @@ function renderSurveyTable(details) {
 
 // ─── GA SURVEY ────────────────────────────────────────────
 function loadGASurveyDashboard() {
+  loadChartJS(function() {
   apiCall('getGASurveyStats', [], function(data) {
     if (!data || !data.overview) {
       document.getElementById('gsa-responden').textContent = '0';
@@ -3329,6 +3413,7 @@ function loadGASurveyDashboard() {
     renderGASurveyTrendChart(data.monthly_trend);
     renderGASurveyTeamDetail(data.teams);
     renderGASurveyTable(data.recent);
+  });
   });
 }
 
@@ -3568,16 +3653,24 @@ function filterMnt(status) {
 }
 
 function loadMaintenanceTable() {
+  // Reset offset pagination setiap kali ganti filter
+  _mntOffset = 0;
   var tbody = document.getElementById('tbody-mnt');
   tbody.innerHTML = '<tr><td colspan="10" class="table-empty">Memuat...</td></tr>';
 
-  apiCall('getAllComplaints', [{ status: APP.mntFilter }], function(data) {
-    if (!data || data.length === 0) {
+  // Default limit 50 — pakai PAGE_SIZE dari konfigurasi global
+  var reqLimit = typeof PAGE_SIZE !== 'undefined' ? PAGE_SIZE : 50;
+  apiCall('getAllComplaints', [{ status: APP.mntFilter, limit: reqLimit, offset: 0 }], function(resp) {
+    // Backward compatible: handle { data, total, limit, offset, hasMore } atau array biasa
+    var items = resp && resp.data ? resp.data : (resp || []);
+    
+    if (!items || items.length === 0) {
       tbody.innerHTML = '<tr><td colspan="10" class="table-empty">Belum ada data tiket</td></tr>';
       return;
     }
+    
     var html = '';
-    data.forEach(function(d) {
+    items.forEach(function(d) {
       html += '<tr>' +
         '<td><strong>' + escapeHtml(d.tiket_id) + '</strong></td>' +
         '<td>' + escapeHtml(d.timestamp) + '</td>' +
@@ -3593,7 +3686,63 @@ function loadMaintenanceTable() {
           (d.status !== 'Selesai' ? '<button class="btn btn-primary btn-xs" onclick="showUpdateStatusForm(\'' + escapeHtml(d.tiket_id) + '\',\'' + escapeHtml(d.status) + '\')">✏️</button> ' : '') +
         '</td></tr>';
     });
+    
     tbody.innerHTML = html;
+    
+    // Tambah baris Load More jika data terpaginate
+    if (resp && resp.hasMore) {
+      var shown = (resp.offset || 0) + items.length;
+      var total = resp.total || 0;
+      tbody.innerHTML += '<tr><td colspan="10" style="text-align:center;padding:12px;border:none">' +
+        '<span style="font-size:0.78rem;color:var(--text-muted);margin-right:12px">Menampilkan ' + shown + ' dari ' + total + '</span>' +
+        '<button class="btn btn-outline btn-xs" onclick="loadMoreComplaints()">📥 Muat Lagi (' + Math.min(total - shown, reqLimit) + ')</button></td></tr>';
+    }
+  });
+}
+
+/**
+ * Load more complaints (pagination)
+ */
+var _mntOffset = 0;
+function loadMoreComplaints() {
+  var tbody = document.getElementById('tbody-mnt');
+  // Hapus baris pagination sebelumnya
+  var pagRow = tbody.querySelector('tr:last-child');
+  if (pagRow && pagRow.querySelector('.btn-outline')) pagRow.remove();
+  
+  _mntOffset += typeof PAGE_SIZE !== 'undefined' ? PAGE_SIZE : 50;
+  var reqLimit = typeof PAGE_SIZE !== 'undefined' ? PAGE_SIZE : 50;
+  
+  apiCall('getAllComplaints', [{ status: APP.mntFilter, limit: reqLimit, offset: _mntOffset }], function(resp) {
+    var items = resp && resp.data ? resp.data : (resp || []);
+    if (!items || items.length === 0) return;
+    
+    var html = '';
+    items.forEach(function(d) {
+      html += '<tr>' +
+        '<td><strong>' + escapeHtml(d.tiket_id) + '</strong></td>' +
+        '<td>' + escapeHtml(d.timestamp) + '</td>' +
+        '<td>' + escapeHtml(d.nama_customer) + '</td>' +
+        '<td>' + escapeHtml(d.lokasi) + '</td>' +
+        '<td>' + escapeHtml(d.kategori) + '</td>' +
+        '<td><span class="badge ' + badgeClass(d.urgensi) + '">' + escapeHtml(d.urgensi) + '</span></td>' +
+        '<td><span class="badge ' + badgeClass(d.status) + '">' + escapeHtml(d.status) + '</span></td>' +
+        '<td><span class="badge ' + badgeClass(d.status_sla) + '">' + escapeHtml(d.status_sla) + '</span></td>' +
+        '<td>' + escapeHtml(d.teknisi || '-') + '</td>' +
+        '<td class="actions">' +
+          '<button class="btn btn-outline btn-xs" onclick="showComplaintDetail(\'' + escapeHtml(d.tiket_id) + '\')">👁️</button> ' +
+          (d.status !== 'Selesai' ? '<button class="btn btn-primary btn-xs" onclick="showUpdateStatusForm(\'' + escapeHtml(d.tiket_id) + '\',\'' + escapeHtml(d.status) + '\')">✏️</button> ' : '') +
+        '</td></tr>';
+    });
+    tbody.innerHTML += html;
+    
+    if (resp && resp.hasMore) {
+      var shown = (resp.offset || 0) + items.length;
+      var total = resp.total || 0;
+      tbody.innerHTML += '<tr><td colspan="10" style="text-align:center;padding:12px;border:none">' +
+        '<span style="font-size:0.78rem;color:var(--text-muted);margin-right:12px">Menampilkan ' + shown + ' dari ' + total + '</span>' +
+        '<button class="btn btn-outline btn-xs" onclick="loadMoreComplaints()">📥 Muat Lagi (' + Math.min(total - shown, reqLimit) + ')</button></td></tr>';
+    }
   });
 }
 
@@ -3711,9 +3860,8 @@ function doUpdateStatus(tiketId) {
 }
 
 function showComplaintDetail(tiketId) {
-  apiCall('getAllComplaints', [{}], function(data) {
-    var d = data.find(function(c) { return c.tiket_id === tiketId; });
-    if (!d) { showToast('error', 'Tiket tidak ditemukan'); return; }
+  apiCall('getComplaintById', [tiketId], function(d) {
+    if (!d || !d.tiket_id) { showToast('error', 'Tiket tidak ditemukan'); return; }
 
     var body =
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:0.85rem;">' +
@@ -4039,7 +4187,8 @@ function processImport(sheetId, csvData) {
 function loadPatrolTable() {
   var tbody = document.getElementById('tbody-patrol');
   tbody.innerHTML = '<tr><td colspan="6" class="table-empty">Memuat...</td></tr>';
-  apiCall('getAllPatrolLogs', [{}], function(data) {
+  apiCall('getAllPatrolLogs', [{}], function(resp) {
+    var data = resp && resp.data ? resp.data : (resp || []);
     if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="table-empty">Belum ada log patroli</td></tr>'; return; }
     var html = '';
     data.forEach(function(d) {
@@ -4331,7 +4480,8 @@ function printQRPage() {
 function loadInspectionTable() {
   var tbody = document.getElementById('tbody-inspection');
   tbody.innerHTML = '<tr><td colspan="8" class="table-empty">Memuat...</td></tr>';
-  apiCall('getAllAssetInspections', [{}], function(data) {
+  apiCall('getAllAssetInspections', [{}], function(resp) {
+    var data = resp && resp.data ? resp.data : (resp || []);
     if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="table-empty">Belum ada data inspeksi</td></tr>'; return; }
     var html = '';
     data.forEach(function(d) {
@@ -4508,29 +4658,20 @@ function showScheduleForm() {
 
 function editSchedule(idJadwal) {
   SCHEDULE_EDIT_ID = idJadwal;
-  apiCall('getAllPatrolSchedules', [], function(data) {
-    var item = null;
-    for (var i = 0; i < data.length; i++) {
-      if (data[i].id_jadwal === idJadwal) {
-        item = data[i];
-        break;
-      }
-    }
-    if (!item) { showToast('error', 'Jadwal tidak ditemukan.'); return; }
+  apiCall('getPatrolScheduleById', [idJadwal], function(item) {
+    if (!item || !item.id_jadwal) { showToast('error', 'Jadwal tidak ditemukan.'); return; }
     renderScheduleForm(item);
   });
 }
 
 function renderScheduleForm(item) {
   var isEdit = !!item;
-  apiCall('getAllUsers', [], function(users) {
+  apiCall('getSecurityStaff', [], function(staff) {
     var personelOpts = '<option value="">Pilih Personel</option>';
     var optionsHtml = '';
-    (users || []).forEach(function(u) {
-      if (u.tim === 'Security' || u.role === 'Staff') {
-        var selected = (isEdit && u.nama === item.nama_personel) ? ' selected' : '';
-        optionsHtml += '<option value="' + escapeHtml(u.nama) + '"' + selected + '>' + escapeHtml(u.nama) + '</option>';
-      }
+    (staff || []).forEach(function(u) {
+      var selected = (isEdit && u.nama === item.nama_personel) ? ' selected' : '';
+      optionsHtml += '<option value="' + escapeHtml(u.nama) + '"' + selected + '>' + escapeHtml(u.nama) + '</option>';
     });
     personelOpts += optionsHtml || '<option value="Budi Security">Budi Security (default)</option>';
 
@@ -4911,7 +5052,8 @@ function sendLinkToWA() {
 function loadBookingTable() {
   var tbody = document.getElementById('tbody-booking');
   tbody.innerHTML = '<tr><td colspan="8" class="table-empty">Memuat...</td></tr>';
-  apiCall('getAllBookings', [{}], function(data) {
+  apiCall('getAllBookings', [{}], function(resp) {
+    var data = resp && resp.data ? resp.data : (resp || []);
     if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="table-empty">Belum ada booking</td></tr>'; return; }
     var html = '';
     data.forEach(function(d) {
@@ -5065,7 +5207,8 @@ function delAssetItem(rowIndex) {
 function loadChecklistTable() {
   var tbody = document.getElementById('tbody-checklist');
   tbody.innerHTML = '<tr><td colspan="7" class="table-empty">Memuat...</td></tr>';
-  apiCall('getAllDailyChecklists', [{}], function(data) {
+  apiCall('getAllDailyChecklists', [{}], function(resp) {
+    var data = resp && resp.data ? resp.data : (resp || []);
     if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="table-empty">Belum ada checklist</td></tr>'; return; }
     var html = '';
     data.forEach(function(d) {
@@ -5126,7 +5269,8 @@ function saveChecklistForm() {
 function loadAuditTable() {
   var tbody = document.getElementById('tbody-audit');
   tbody.innerHTML = '<tr><td colspan="9" class="table-empty">Memuat...</td></tr>';
-  apiCall('getAllAudits', [{}], function(data) {
+  apiCall('getAllAudits', [{}], function(resp) {
+    var data = resp && resp.data ? resp.data : (resp || []);
     if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="9" class="table-empty">Belum ada data audit</td></tr>'; return; }
     var html = '';
     data.forEach(function(d) {
@@ -5290,7 +5434,8 @@ function filterStaffByTeamAudit() {
 function loadGCTable() {
   var tbody = document.getElementById('tbody-gc');
   tbody.innerHTML = '<tr><td colspan="9" class="table-empty">Memuat...</td></tr>';
-  apiCall('getAllGCExecutions', [{}], function(data) {
+  apiCall('getAllGCExecutions', [{}], function(resp) {
+    var data = resp && resp.data ? resp.data : (resp || []);
     if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="9" class="table-empty">Belum ada jadwal GC</td></tr>'; return; }
     var html = '';
     data.forEach(function(d) {
@@ -5763,10 +5908,10 @@ function saveKosForm(idKos) {
     status: document.getElementById('f-kos-status').value
   };
   if (!p.nama_kos) { showToast('error', 'Nama kos wajib diisi!'); return; }
-  setBtnLoading('modal-main', true);
+  setBtnLoading('modal-confirm-btn', true);
   apiCall('saveKos', [p], function(d, msg) {
     showToast('success', msg); closeModal(); loadKosDashboard();
-  }, function(e) { showToast('error', e); setBtnLoading('modal-main', false); });
+  }, function(e) { showToast('error', e); setBtnLoading('modal-confirm-btn', false); });
 }
 
 function confirmDeleteKos(idKos, namaKos) {
@@ -5852,9 +5997,9 @@ function saveKamar(idKamar) {
     fasilitas: document.getElementById('f-fasilitas').value
   };
   if (!p.id_kos || !p.nomor_kamar) { showToast('error', 'Kos dan nomor kamar wajib diisi!'); return; }
-  setBtnLoading('modal-main', true);
+  setBtnLoading('modal-confirm-btn', true);
   apiCall('saveKamar', [p], function(d, msg) { showToast('success', msg); closeModal(); loadKamarData(KAMAR_CURRENT_FILTER); },
-    function(e) { showToast('error', e); setBtnLoading('modal-main', false); });
+    function(e) { showToast('error', e); setBtnLoading('modal-confirm-btn', false); });
 }
 
 function confirmDeleteKamar(id) {
@@ -5876,7 +6021,8 @@ function filterTrx(status, btn) {
 function loadTransaksiKos() {
   var tbody = document.getElementById('tbody-kostrx');
   tbody.innerHTML = '<tr><td colspan="9" class="table-empty">Memuat...</td></tr>';
-  apiCall('getAllTransaksiKos', [TRX_CURRENT_FILTER], function(data) {
+  apiCall('getAllTransaksiKos', [TRX_CURRENT_FILTER], function(resp) {
+    var data = resp && resp.data ? resp.data : (resp || []);
     if (!data || data.length === 0) {
       tbody.innerHTML = '<tr><td colspan="9" class="table-empty">Belum ada data transaksi</td></tr>';
       document.getElementById('trx-active').textContent = '0';
@@ -5929,9 +6075,9 @@ function doCheckIn() {
     catatan: document.getElementById('f-ci-catatan').value
   };
   if (!p.id_kamar || !p.nama_tamu || !p.check_in) { showToast('error', 'Kamar, nama tamu, dan tanggal check-in wajib diisi!'); return; }
-  setBtnLoading('modal-main', true);
+  setBtnLoading('modal-confirm-btn', true);
   apiCall('checkInKos', [p], function(d, msg) { showToast('success', msg); closeModal(); loadTransaksiKos(); },
-    function(e) { showToast('error', e); setBtnLoading('modal-main', false); });
+    function(e) { showToast('error', e); setBtnLoading('modal-confirm-btn', false); });
 }
 
 function showCheckOutConfirm(idTransaksi) {
@@ -5943,9 +6089,9 @@ function showCheckOutConfirm(idTransaksi) {
 function doCheckOut(idTransaksi) {
   var tgl = document.getElementById('f-co-tgl').value;
   var cat = document.getElementById('f-co-catatan').value;
-  setBtnLoading('modal-main', true);
+  setBtnLoading('modal-confirm-btn', true);
   apiCall('checkOutKos', [idTransaksi, tgl, cat], function(d, msg) { showToast('success', msg); closeModal(); loadTransaksiKos(); },
-    function(e) { showToast('error', e); setBtnLoading('modal-main', false); });
+    function(e) { showToast('error', e); setBtnLoading('modal-confirm-btn', false); });
 }
 
 function cancelTransaksi(id) {
@@ -5967,7 +6113,8 @@ function filterPrep(status, btn) {
 function loadPersiapanKamar() {
   var tbody = document.getElementById('tbody-kosprep');
   tbody.innerHTML = '<tr><td colspan="9" class="table-empty">Memuat...</td></tr>';
-  apiCall('getAllPersiapanKamar', [PREP_CURRENT_FILTER], function(data) {
+  apiCall('getAllPersiapanKamar', [PREP_CURRENT_FILTER], function(resp) {
+    var data = resp && resp.data ? resp.data : (resp || []);
     if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="9" class="table-empty">Belum ada tugas</td></tr>'; return; }
     var html = '';
     data.forEach(function(p) {
@@ -6014,9 +6161,9 @@ function createPersiapan() {
     assigned_to: document.getElementById('f-prep-petugas').value, catatan: document.getElementById('f-prep-catatan').value
   };
   if (!p.id_kamar || !p.jenis) { showToast('error', 'Kamar dan jenis wajib diisi!'); return; }
-  setBtnLoading('modal-main', true);
+  setBtnLoading('modal-confirm-btn', true);
   apiCall('createPersiapanKamar', [p], function(d, msg) { showToast('success', msg); closeModal(); loadPersiapanKamar(); },
-    function(e) { showToast('error', e); setBtnLoading('modal-main', false); });
+    function(e) { showToast('error', e); setBtnLoading('modal-confirm-btn', false); });
 }
 
 function updatePrepStatus(id, status) {
@@ -6153,7 +6300,7 @@ function showModalCustom(title, bodyHtml, saveAction, btnLabel, btnClass) {
   document.getElementById('modal-body').innerHTML = bodyHtml;
   document.getElementById('modal-footer').innerHTML =
     '<button class="btn btn-outline" onclick="closeModal()">Batal</button>' +
-    '<button class="btn ' + (btnClass || 'btn-primary') + '" onclick="' + saveAction + '">' + (btnLabel || '💾 Simpan') + '</button>';
+    '<button class="btn ' + (btnClass || 'btn-primary') + '" id="modal-confirm-btn" onclick=\'' + saveAction + '\'>' + (btnLabel || '💾 Simpan') + '</button>';
   document.getElementById('modal-main').classList.add('show');
 }
 

@@ -53,7 +53,7 @@ function savePatrolLog(payload) {
 function getAllPatrolLogs(filters) {
   try {
     var user = getActiveUserSession();
-    var data = getSheetData(CONFIG.SHEETS.PATROL_LOG);
+    var data = getCachedSheetData(CONFIG.SHEETS.PATROL_LOG, 30);
 
     if (filters) {
       if (filters.nama_personel) {
@@ -86,7 +86,18 @@ function getAllPatrolLogs(filters) {
       };
     });
 
-    return successResponse(data);
+    // Default pagination: limit 50, offset 0
+    var reqLimit = filters && filters.limit ? filters.limit : 50;
+    var reqOffset = filters && filters.offset ? filters.offset : 0;
+    var pagination = applyPagination(data, reqLimit, reqOffset);
+    
+    return successResponse({
+      data: pagination.paginatedData,
+      total: pagination.total,
+      limit: pagination.limit,
+      offset: pagination.offset,
+      hasMore: pagination.hasMore
+    });
   } catch (e) {
     return errorResponse(e.message);
   }
@@ -156,7 +167,7 @@ function saveAssetInspection(payload) {
 function getAllAssetInspections(filters) {
   try {
     var user = getActiveUserSession();
-    var data = getSheetData(CONFIG.SHEETS.ASSET_INSPECTION);
+    var data = getCachedSheetData(CONFIG.SHEETS.ASSET_INSPECTION, 30);
 
     if (filters) {
       if (filters.bulan_tahun) {
@@ -167,7 +178,18 @@ function getAllAssetInspections(filters) {
       }
     }
 
-    return successResponse(data);
+    // Default pagination: limit 50, offset 0
+    var reqLimit = filters && filters.limit ? filters.limit : 50;
+    var reqOffset = filters && filters.offset ? filters.offset : 0;
+    var pagination = applyPagination(data, reqLimit, reqOffset);
+    
+    return successResponse({
+      data: pagination.paginatedData,
+      total: pagination.total,
+      limit: pagination.limit,
+      offset: pagination.offset,
+      hasMore: pagination.hasMore
+    });
   } catch (e) {
     return errorResponse(e.message);
   }
@@ -227,7 +249,7 @@ function calculateSecurityKPI() {
     });
 
     // Hitung KPI — baca dari sheet Master_Patrol_Checkpoints
-    var checkpointData = getSheetData(CONFIG.SHEETS.PATROL_CHECKPOINTS);
+    var checkpointData = getCachedSheetData(CONFIG.SHEETS.PATROL_CHECKPOINTS, 3600);
     var totalCheckpoints = checkpointData.filter(function(c) { return c.status === 'Aktif'; }).length;
     if (totalCheckpoints === 0) totalCheckpoints = checkpointData.length;
     if (totalCheckpoints === 0) totalCheckpoints = 1;
@@ -302,7 +324,7 @@ function calculateSecurityKPI() {
  */
 function getSecurityKPI() {
   try {
-    var data = getSheetData(CONFIG.SHEETS.KPI_SECURITY);
+    var data = getCachedSheetData(CONFIG.SHEETS.KPI_SECURITY, 1800);
 
     data = data.map(function(d) {
       return {
@@ -330,7 +352,7 @@ function getSecurityKPI() {
  */
 function getAllPatrolCheckpoints() {
   try {
-    var data = getSheetData(CONFIG.SHEETS.PATROL_CHECKPOINTS);
+    var data = getCachedSheetData(CONFIG.SHEETS.PATROL_CHECKPOINTS, 3600);
     return successResponse(data);
   } catch (e) {
     return errorResponse(e.message);
@@ -428,8 +450,41 @@ function deletePatrolCheckpoint(idPos) {
  */
 function getAllPatrolSchedules() {
   try {
-    var data = getSheetData(CONFIG.SHEETS.PATROL_SCHEDULE);
+    var data = getCachedSheetData(CONFIG.SHEETS.PATROL_SCHEDULE, 3600);
     return successResponse(data);
+  } catch (e) {
+    return errorResponse(e.message);
+  }
+}
+
+/**
+ * Mendapatkan satu jadwal patroli berdasarkan ID
+ * Menggunakan findRow() untuk lookup langsung tanpa load semua data
+ */
+function getPatrolScheduleById(idJadwal) {
+  try {
+    var user = getActiveUserSession();
+    if (!idJadwal) throw new Error('ID jadwal wajib diisi.');
+    var found = findRow(CONFIG.SHEETS.PATROL_SCHEDULE, 'id_jadwal', idJadwal);
+    if (!found) throw new Error('Jadwal tidak ditemukan.');
+    return successResponse(found.data);
+  } catch (e) {
+    return errorResponse(e.message);
+  }
+}
+
+/**
+ * Mendapatkan daftar staff Security untuk dropdown personel
+ */
+function getSecurityStaff() {
+  try {
+    var userData = getCachedSheetData(CONFIG.SHEETS.USER_LIST, 300);
+    var staff = userData.filter(function(d) {
+      return (d.tim === 'Security' || d.role === 'Staff') && d.status === 'Aktif';
+    }).map(function(d) {
+      return { nama: d.nama, tim: d.tim, no_wa: d.no_wa || '' };
+    });
+    return successResponse(staff);
   } catch (e) {
     return errorResponse(e.message);
   }

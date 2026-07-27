@@ -39,6 +39,10 @@ function saveDailyChecklist(payload) {
       // ─── CROSS-MODULE TRIGGER ─────────────────────────
       // Jika ada kerusakan, otomatis buat tiket maintenance
       if (payload.kondisi_fasilitas === 'Ada Kerusakan' && payload.detail_kerusakan) {
+        // Deteksi kategori dari deskripsi kerusakan
+        var detectedCat = detectComplaintCategory(payload.detail_kerusakan);
+        var targetSLA = lookupSLA(detectedCat, '', 'Medium');
+        
         var mainSheet = getSheet(CONFIG.SHEETS.MAIN_DATA);
         var tiketId = generateSequentialId('MNT', CONFIG.SHEETS.MAIN_DATA, 'tiket_id');
 
@@ -50,10 +54,10 @@ function saveDailyChecklist(payload) {
           payload.lokasi_area,                            // lokasi
           '[Auto dari Checklist CS] ' + payload.detail_kerusakan, // deskripsi
           '',                                             // foto_kerusakan
-          'Lainnya',                                      // kategori
-          'Lainnya',                                      // sub_kategori
+          detectedCat,                                    // kategori (detected)
+          '',                                             // sub_kategori
           'Medium',                                       // urgensi
-          24,                                             // target_sla_jam
+          targetSLA,                                      // target_sla_jam (from lookup)
           CONFIG.STATUS.OPEN,                             // status
           '', '', '', '', '', '', ''                      // sisanya kosong
         ]);
@@ -61,7 +65,7 @@ function saveDailyChecklist(payload) {
         // ─── WA NOTIFICATION ────────────────────────────
         // Kirim notifikasi WhatsApp ke Supervisor/Admin tentang kerusakan
         try {
-          var supervisorList = getSheetData(CONFIG.SHEETS.USER_LIST);
+          var supervisorList = getCachedSheetData(CONFIG.SHEETS.USER_LIST, 600);
           supervisorList.forEach(function(u) {
             if ((u.role === 'Supervisor' || u.role === 'Admin') && u.status === 'Aktif' && u.no_wa) {
               sendDamageDetectedNotification(
@@ -97,7 +101,7 @@ function saveDailyChecklist(payload) {
 function getAllDailyChecklists(filters) {
   try {
     var user = getActiveUserSession();
-    var data = getSheetData(CONFIG.SHEETS.CS_DAILY_CHECKLIST);
+    var data = getCachedSheetData(CONFIG.SHEETS.CS_DAILY_CHECKLIST, 30);
 
     if (filters) {
       if (filters.tim && filters.tim !== 'Semua') {
@@ -141,7 +145,18 @@ function getAllDailyChecklists(filters) {
       };
     });
 
-    return successResponse(data);
+    // Default pagination: limit 50, offset 0
+    var reqLimit = filters && filters.limit ? filters.limit : 50;
+    var reqOffset = filters && filters.offset ? filters.offset : 0;
+    var pagination = applyPagination(data, reqLimit, reqOffset);
+    
+    return successResponse({
+      data: pagination.paginatedData,
+      total: pagination.total,
+      limit: pagination.limit,
+      offset: pagination.offset,
+      hasMore: pagination.hasMore
+    });
   } catch (e) {
     return errorResponse(e.message);
   }
@@ -192,7 +207,7 @@ function saveAuditHousekeeping(payload) {
 function getAllAudits(filters) {
   try {
     var user = getActiveUserSession();
-    var data = getSheetData(CONFIG.SHEETS.AUDIT_HOUSEKEEPING);
+    var data = getCachedSheetData(CONFIG.SHEETS.AUDIT_HOUSEKEEPING, 30);
 
     if (filters) {
       if (filters.tim_diaudit && filters.tim_diaudit !== 'Semua') {
@@ -228,7 +243,18 @@ function getAllAudits(filters) {
       };
     });
 
-    return successResponse(data);
+    // Default pagination: limit 50, offset 0
+    var reqLimit = filters && filters.limit ? filters.limit : 50;
+    var reqOffset = filters && filters.offset ? filters.offset : 0;
+    var pagination = applyPagination(data, reqLimit, reqOffset);
+    
+    return successResponse({
+      data: pagination.paginatedData,
+      total: pagination.total,
+      limit: pagination.limit,
+      offset: pagination.offset,
+      hasMore: pagination.hasMore
+    });
   } catch (e) {
     return errorResponse(e.message);
   }
@@ -330,7 +356,7 @@ function updateGCStatus(gcId, newStatus, completionData) {
 function getAllGCExecutions(filters) {
   try {
     var user = getActiveUserSession();
-    var data = getSheetData(CONFIG.SHEETS.GC_EXECUTION);
+    var data = getCachedSheetData(CONFIG.SHEETS.GC_EXECUTION, 30);
 
     if (filters) {
       if (filters.status && filters.status !== 'Semua') {
@@ -356,7 +382,18 @@ function getAllGCExecutions(filters) {
       };
     });
 
-    return successResponse(data);
+    // Default pagination: limit 50, offset 0
+    var reqLimit = filters && filters.limit ? filters.limit : 50;
+    var reqOffset = filters && filters.offset ? filters.offset : 0;
+    var pagination = applyPagination(data, reqLimit, reqOffset);
+    
+    return successResponse({
+      data: pagination.paginatedData,
+      total: pagination.total,
+      limit: pagination.limit,
+      offset: pagination.offset,
+      hasMore: pagination.hasMore
+    });
   } catch (e) {
     return errorResponse(e.message);
   }
@@ -390,7 +427,7 @@ function deleteGCExecution(gcId) {
  */
 function getMasterCSSchedule() {
   try {
-    var data = getSheetData(CONFIG.SHEETS.MASTER_CS_SCHEDULE);
+    var data = getCachedSheetData(CONFIG.SHEETS.MASTER_CS_SCHEDULE, 3600);
     return successResponse(data);
   } catch (e) {
     return errorResponse(e.message);
@@ -658,7 +695,7 @@ function uploadAuditPhoto(base64Data, fileName) {
  */
 function getLocationList() {
   try {
-    var data = getSheetData(CONFIG.SHEETS.MASTER_CS_SCHEDULE);
+    var data = getCachedSheetData(CONFIG.SHEETS.MASTER_CS_SCHEDULE, 3600);
     var locations = data.map(function(d) {
       return {
         lokasi_area: d.lokasi_area,
@@ -668,7 +705,7 @@ function getLocationList() {
     
     // Tambah dari Master_Lokasi jika ada
     try {
-      var lokasiData = getSheetData(CONFIG.SHEETS.MASTER_LOKASI);
+      var lokasiData = getCachedSheetData(CONFIG.SHEETS.MASTER_LOKASI, 3600);
       lokasiData.forEach(function(l) {
         if (l.status === 'Aktif') {
           locations.push({
@@ -703,14 +740,14 @@ function getAllMasterLokasi() {
       return withLock(function() {
         var existing = ss.getSheetByName(CONFIG.SHEETS.MASTER_LOKASI);
         if (existing) {
-          return successResponse(getSheetData(CONFIG.SHEETS.MASTER_LOKASI));
+          return successResponse(getCachedSheetData(CONFIG.SHEETS.MASTER_LOKASI, 3600));
         }
         createMasterLokasiSheetInternal(ss);
         return successResponse([]);
       });
     }
     
-    var data = getSheetData(CONFIG.SHEETS.MASTER_LOKASI);
+    var data = getCachedSheetData(CONFIG.SHEETS.MASTER_LOKASI, 3600);
     return successResponse(data);
   } catch (e) {
     return errorResponse(e.message);

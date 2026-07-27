@@ -60,13 +60,24 @@ var CONFIG = {
 // ─── CURRENT USER (set per-request) ─────────────────────────
 var CURRENT_USER_EMAIL = '';
 
+// ─── CACHED SPREADSHEET OBJECT ────────────────────────────
+// Cache spreadsheet instance untuk menghindari multiple openById()
+// dalam satu eksekusi. GAS menjalankan script dari awal setiap request,
+// jadi variabel global ini hanya bertahan dalam 1 request.
+var _cachedSpreadsheet = null;
+
 // ─── SPREADSHEET ACCESS ─────────────────────────────────────
 
 /**
- * Mendapatkan instance Spreadsheet
+ * Mendapatkan instance Spreadsheet (cached dalam 1 eksekusi)
+ * openById() adalah operasi mahal — dengan cache ini, fungsi yang
+ * baca banyak sheet cukup panggil openById() SEKALI saja.
  */
 function getSpreadsheet() {
-  return SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  if (!_cachedSpreadsheet) {
+    _cachedSpreadsheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  }
+  return _cachedSpreadsheet;
 }
 
 /**
@@ -99,6 +110,40 @@ function getSheetData(sheetName) {
     result.push(row);
   }
   return result;
+}
+
+/**
+ * Baca data sheet dengan CacheService (TTL otomatis)
+ * Untuk data master yang jarang berubah — mengurangi API calls ke Google Sheets.
+ * 
+ * @param {string} sheetName - Nama sheet
+ * @param {number} ttlSeconds - Time-to-live dalam detik (default: 300 = 5 menit)
+ * @return {Array} Array of objects (sama seperti getSheetData)
+ */
+function getCachedSheetData(sheetName, ttlSeconds) {
+  var cache = CacheService.getScriptCache();
+  var key = 'csd_' + sheetName.replace(/[^a-zA-Z0-9]/g, '_');
+  var cached = cache.get(key);
+  
+  if (cached) {
+    try {
+      return JSON.parse(cached);
+    } catch (e) {
+      Logger.log('Cache parse error for ' + sheetName + ': ' + e.message + ' — membaca ulang.');
+    }
+  }
+  
+  // Cache miss — baca dari sheet
+  var data = getSheetData(sheetName);
+  
+  // Cache the result (max 21600 detik = 6 jam, atau gunakan ttl yang diberikan)
+  var maxTtl = Math.min(ttlSeconds || 300, 21600);
+  if (data.length > 0) {
+    cache.put(key, JSON.stringify(data), maxTtl);
+    Logger.log('CACHED: ' + sheetName + ' (' + data.length + ' rows, TTL=' + maxTtl + 's)');
+  }
+  
+  return data;
 }
 
 /**
@@ -167,24 +212,37 @@ function generateId(prefix) {
 
 /**
  * Generate sequential ID: PREFIX-YYYY-NNNN
+ * Dioptimasi dengan PropertiesService — tidak perlu baca seluruh sheet.
+ * Counter disimpan per prefix+tahun, di-update otomatis setiap ID baru.
+ * Fallback: jika counter tidak ditemukan, baca sheet untuk inisialisasi.
  */
 function generateSequentialId(prefix, sheetName, idColumn) {
   var year = Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy');
-  var data = getSheetData(sheetName);
-  var maxNum = 0;
   var pattern = prefix + '-' + year + '-';
-
-  data.forEach(function(row) {
-    var id = String(row[idColumn] || '');
-    if (id.indexOf(pattern) === 0) {
-      var num = parseInt(id.replace(pattern, ''), 10);
-      if (num > maxNum) maxNum = num;
-    }
-  });
-
-  var nextNum = String(maxNum + 1);
-  while (nextNum.length < 4) nextNum = '0' + nextNum;
-  return pattern + nextNum;
+  var propsKey = 'seqid_' + prefix + '_' + year;
+  
+  var props = PropertiesService.getScriptProperties();
+  var lastNum = parseInt(props.getProperty(propsKey) || '0', 10);
+  
+  if (lastNum === 0) {
+    // First time this year — baca sheet untuk init counter
+    var data = getSheetData(sheetName);
+    data.forEach(function(row) {
+      var id = String(row[idColumn] || '');
+      if (id.indexOf(pattern) === 0) {
+        var num = parseInt(id.replace(pattern, ''), 10);
+        if (num > lastNum) lastNum = num;
+      }
+    });
+    Logger.log('SEQID INIT: ' + propsKey + ' = ' + lastNum + ' (from ' + sheetName + ')');
+  }
+  
+  var nextNum = lastNum + 1;
+  props.setProperty(propsKey, String(nextNum));
+  
+  var numStr = String(nextNum);
+  while (numStr.length < 4) numStr = '0' + numStr;
+  return pattern + numStr;
 }
 
 // ─── AUTHENTICATION & SESSION ───────────────────────────────
@@ -363,6 +421,40 @@ function diffInHours(startDate, endDate) {
   return Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100;
 }
 
+// ─── PAGINATION HELPER ──────────────────────────────────────
+
+/**
+ * Terapkan pagination ke array data
+ * Digunakan oleh fungsi getAll* untuk membatasi jumlah data yang dikirim
+ * 
+ * @param {Array} data - Array data yang sudah difilter dan di-sort
+ * @param {number} limit - Maksimal jumlah baris (0 atau undefined = semua)
+ * @param {number} offset - Jumlah baris yang dilewati (default: 0)
+ * @return {Object} { paginatedData, total, hasMore }
+ */
+function applyPagination(data, limit, offset) {
+  var total = data.length;
+  var lim = limit && !isNaN(limit) ? Math.min(Math.max(parseInt(limit), 1), 500) : 0;
+  var off = offset && !isNaN(offset) ? Math.max(parseInt(offset), 0) : 0;
+  
+  var hasMore = false;
+  var paginatedData = data;
+  
+  if (lim > 0) {
+    var endIndex = off + lim;
+    hasMore = endIndex < total;
+    paginatedData = data.slice(off, endIndex);
+  }
+  
+  return {
+    paginatedData: paginatedData,
+    total: total,
+    limit: lim || total,
+    offset: off,
+    hasMore: hasMore
+  };
+}
+
 /**
  * Get current timestamp
  */
@@ -421,6 +513,60 @@ function sendWhatsApp(phone, message) {
   } catch (e) {
     Logger.log('WA Send Error: ' + e.message);
     return { success: false, error: e.message };
+  }
+}
+
+// ─── WEBHOOK CACHE (untuk debugging & validasi) ────────────
+
+/**
+ * Cache payload webhook terakhir ke CacheService
+ * Biar bisa dicek dari endpoint ?webhook=1 tanpa perlu buka Logs
+ */
+function cacheWebhookPayload(payload, action, result) {
+  try {
+    var cache = CacheService.getScriptCache();
+    var summary = {
+      time: nowFormatted(),
+      sender: payload.sender || '(unknown)',
+      name: payload.name || '(unknown)',
+      message_preview: (payload.message || '').substring(0, 150),
+      action: action || 'received',
+      result: result || 'ok'
+    };
+    // Hanya cache info penting, bukan payload mentah yang besar
+    cache.put('webhook_last_summary', JSON.stringify(summary), 600); // 10 menit
+    cache.put('webhook_last_time', String(new Date().getTime()), 600);
+    Logger.log('Webhook cached: ' + JSON.stringify(summary));
+  } catch (cacheErr) {
+    Logger.log('Cache webhook error: ' + cacheErr.message);
+  }
+}
+
+/**
+ * Mendapatkan status webhook untuk halaman validasi
+ * @return {Object} Status object
+ */
+function getWebhookStatus() {
+  try {
+    var cache = CacheService.getScriptCache();
+    var token = getSetting('WA_API_TOKEN');
+    var scriptUrl = ScriptApp.getService().getUrl();
+    var lastSummary = cache.get('webhook_last_summary');
+    var lastTime = cache.get('webhook_last_time');
+
+    return {
+      wa_token_configured: !!token,
+      wa_token_preview: token ? token.substring(0, 6) + '...' + token.slice(-4) : null,
+      web_app_url: scriptUrl,
+      webhook_url: scriptUrl, // URL yang sama untuk doPost()
+      last_webhook: lastSummary ? JSON.parse(lastSummary) : null,
+      last_webhook_time: lastTime ? new Date(parseInt(lastTime, 10)).toLocaleString('id-ID') : null,
+      spreadsheet_id: CONFIG.SPREADSHEET_ID,
+      timezone: CONFIG.TIMEZONE
+    };
+  } catch (e) {
+    Logger.log('getWebhookStatus Error: ' + e.message);
+    return { error: e.message };
   }
 }
 
@@ -493,6 +639,26 @@ function saveSettings(settings) {
 // ╔══════════════════════════════════════════════════════════╗
 // ║    TEMPLATE PESAN WHATSAPP — CUSTOMER COMPLAINT           ║
 // ╚══════════════════════════════════════════════════════════╝
+
+/**
+ * [TEMPLATE] Konfirmasi cepat tiket berhasil dibuat — WAJIB dikirim ke customer
+ * via nomor Fonnte sender (bukan nomor dari form, supaya pasti sampai)
+ */
+function sendTicketConfirmation(phone, customerName, ticketId, kategori) {
+  var message = '✅ *Laporan Diterima*\n' +
+    '━━━━━━━━━━━━━━━━━━━━\n\n' +
+    'Halo *' + (customerName || 'Customer') + '*,\n\n' +
+    'Laporan Anda telah tercatat di sistem kami.\n\n' +
+    '🆔 *ID Tiket:* ' + ticketId + '\n' +
+    '📂 *Kategori:* ' + (kategori || 'Lainnya') + '\n\n' +
+    '⏱️ Tim teknis kami akan segera menindaklanjuti laporan Anda.\n' +
+    'Simpan ID tiket untuk referensi.\n' +
+    'Terima kasih! 🙏\n' +
+    '━━━━━━━━━━━━━━━━━━━━\n' +
+    CONFIG.ORG_NAME;
+
+  return sendWhatsApp(phone, message);
+}
 
 /**
  * [TEMPLATE] Notifikasi tiket komplain baru — dikirim ke customer
@@ -903,6 +1069,49 @@ function setupBookingReminderTrigger() {
 }
 
 
+// ─── DETEKSI KATEGORI KOMPLAIN ───────────────────────────
+
+/**
+ * Deteksi kategori komplain dari teks deskripsi kerusakan
+ * Mapping kata kunci umum ke kategori resmi untuk SLA lookup
+ * 
+ * @param {string} text - Teks deskripsi kerusakan
+ * @return {string} Kategori yang terdeteksi, atau 'Lainnya' jika tidak cocok
+ */
+function detectComplaintCategory(text) {
+  if (!text) return 'Lainnya';
+  
+  var t = text.toLowerCase().trim();
+  
+  // Mapping keyword → kategori (prioritas: pertama cocok = digunakan)
+  var keywords = [
+    // Electrical
+    { words: ['listrik', 'lampu', 'stopkontak', 'saklar', 'kabel', 'colokan', 'mati lampu', 'led', 'flicker', 'korsleting', 'korslet', 'setrum', 'strum'], cat: 'Electrical' },
+    // Plumbing
+    { words: ['pipa', 'kran', 'air', 'bocor', 'wc', 'toilet', 'saluran', 'mampet', 'tiris', 'bak', 'wastafel', 'shower', 'septik', 'rembes'], cat: 'Plumbing' },
+    // AC/HVAC
+    { words: ['ac', 'hvac', 'pendingin', 'panas', 'suhu', 'ac/hvac', 'freon', 'kompresor', 'blower', 'fan', 'kipas', 'thermostat', 'cooling'], cat: 'AC/HVAC' },
+    // Furniture
+    { words: ['meja', 'kursi', 'lemari', 'furniture', 'sofa', 'kamar', 'pintu', 'jendela', 'ranjang', 'bed', 'laci', 'rak', 'gorden', 'tirai'], cat: 'Furniture' },
+    // IT/Network
+    { words: ['it', 'network', 'jaringan', 'wifi', 'komputer', 'laptop', 'printer', 'internet', 'lan', 'kabel data', 'cctv', 'mouse', 'keyboard', 'monitor'], cat: 'IT/Network' },
+    // General Building
+    { words: ['dinding', 'lantai', 'plafon', 'genteng', 'atap', 'gedung', 'bangunan', 'pagar', 'cat', 'tembok', 'ubin', 'keramik', 'gagang', 'kunci'], cat: 'Lainnya' }
+  ];
+  
+  for (var i = 0; i < keywords.length; i++) {
+    var group = keywords[i];
+    for (var j = 0; j < group.words.length; j++) {
+      if (t.indexOf(group.words[j]) >= 0) {
+        Logger.log('detectComplaintCategory: text="' + text.substring(0, 50) + '" → ' + group.cat + ' (matched: "' + group.words[j] + '")');
+        return group.cat;
+      }
+    }
+  }
+  
+  return 'Lainnya';
+}
+
 // ─── FORMAT PENGIRIMAN KOMPLAIN VIA WA ─────────────────────
 
 /**
@@ -914,57 +1123,135 @@ function setupBookingReminderTrigger() {
  *   Deskripsi: Lampu mati
  *   Foto: (optional) link atau attachment
  * 
+ * V2 — Improved:
+ * - Pakai regex untuk fleksibilitas lebih tinggi
+ * - Skip placeholder template (seperti "[nama Anda]")
+ * - Hapus quoted reply text (diawali >)
+ * - Logging detail untuk debugging
+ * 
  * @param {string} message - Pesan teks dari customer
  * @return {Object|null} { nama_customer, lokasi, kategori, deskripsi, foto_kerusakan } atau null jika tidak valid
  */
 function parseComplaintFromMessage(message) {
   if (!message) return null;
   
+  // ── PREPROCESSING ──────────────────────────────────────
+  var originalMessage = message;
+  
+  // Hapus carriage return
+  message = message.replace(/\r/g, '');
+  
+  // Hapus baris quoted reply (diawali dengan >) — WhatsApp quoted message
+  message = message.replace(/^>.*$/gm, '');
+  
+  // Hapus baris yang hanya berisi karakter separator/garis
+  // (━━━, ⎯⎯⎯, ____, ===, dsb)
+  message = message.replace(/^[━⎯─=_\-\s]+$/gm, '');
+  
+  // Hapus baris header/footer template (hanya separator dan judul template)
+  // NOTE: jangan hapus baris dengan "Terima kasih" atau "Tim teknis" karena
+  // bisa jadi itu bagian dari deskripsi komplain customer
+  message = message.replace(/^.*(General Affair|Laporan Kerusakan|━━━━|⎯⎯⎯).*$/gim, '');
+  
+  // Trim dan split
   var lines = message.split('\n');
   var result = {};
   
+  Logger.log('PARSE: Processing ' + lines.length + ' lines (preprocessed) from message length ' + originalMessage.length);
+  
+  // ── EKSTRAK FIELD DENGAN REGEX ─────────────────────────
+  // Regex lebih fleksibel: handle bold marker (*Nama:*), emoji prefix, spasi tidak rapi
   lines.forEach(function(line) {
-    var lower = line.toLowerCase().trim();
+    var trimmed = line.trim();
+    if (!trimmed) return;
     
-    // Nama: ... (gunakan >= 0 untuk handle emoji prefix seperti 🟡 Nama:)
-    if (lower.indexOf('nama:') >= 0 || lower.indexOf('nama :') >= 0) {
-      var idx = line.indexOf(':');
-      if (idx >= 0) result.nama_customer = line.substring(idx + 1).trim();
+    var lower = trimmed.toLowerCase();
+    
+    // ── Nama: ... ──
+    if (/nama\s*:/.test(lower)) {
+      var idx = trimmed.indexOf(':');
+      if (idx >= 0) {
+        var val = trimmed.substring(idx + 1).trim();
+        // Skip placeholder "[nama Anda]" atau variasi lainnya
+        if (val && !/^\[.*\]$/.test(val) && val !== '[nama Anda]' && val !== '(nama Anda)') {
+          result.nama_customer = val;
+          Logger.log('PARSE: Found nama_customer="' + val + '"');
+        }
+      }
     }
-    // Lokasi: ...
-    else if (lower.indexOf('lokasi:') >= 0 || lower.indexOf('lokasi :') >= 0) {
-      var idx = line.indexOf(':');
-      if (idx >= 0) result.lokasi = line.substring(idx + 1).trim();
+    // ── Lokasi: ... ──
+    else if (/lokasi\s*:/.test(lower)) {
+      var idx = trimmed.indexOf(':');
+      if (idx >= 0) {
+        var val = trimmed.substring(idx + 1).trim();
+        if (val && !/^\[.*\]$/.test(val) && val !== '[lokasi kerusakan]' && val !== '(lokasi kerusakan)') {
+          result.lokasi = val;
+          Logger.log('PARSE: Found lokasi="' + val + '"');
+        }
+      }
     }
-    // Kategori: ...
-    else if (lower.indexOf('kategori:') >= 0 || lower.indexOf('kategori :') >= 0) {
-      var idx = line.indexOf(':');
-      if (idx >= 0) result.kategori = line.substring(idx + 1).trim();
+    // ── Kategori: ... ──
+    else if (/kategori\s*:/.test(lower)) {
+      var idx = trimmed.indexOf(':');
+      if (idx >= 0) {
+        var val = trimmed.substring(idx + 1).trim();
+        if (val && !/^\[.*\]$/.test(val) && val.indexOf('Electrical/Plumbing') === -1 && val.indexOf('[') === -1) {
+          result.kategori = val;
+          Logger.log('PARSE: Found kategori="' + val + '"');
+        }
+      }
     }
-    // Prioritas: ... (opsional, untuk urgensi)
-    else if (lower.indexOf('prioritas:') >= 0 || lower.indexOf('prioritas :') >= 0) {
-      var idx = line.indexOf(':');
-      if (idx >= 0) result.urgensi = line.substring(idx + 1).trim();
+    // ── Prioritas: ... (opsional, untuk urgensi) ──
+    else if (/prioritas\s*:/.test(lower)) {
+      var idx = trimmed.indexOf(':');
+      if (idx >= 0) {
+        var val = trimmed.substring(idx + 1).trim();
+        if (val && !/^\[.*\]$/.test(val)) {
+          result.urgensi = val;
+          Logger.log('PARSE: Found urgensi="' + val + '"');
+        }
+      }
     }
-    // Deskripsi: ...
-    else if (lower.indexOf('deskripsi:') >= 0 || lower.indexOf('deskripsi :') >= 0 ||
-             lower.indexOf('desc:') >= 0 || lower.indexOf('desc :') >= 0) {
-      var idx = line.indexOf(':');
-      if (idx >= 0) result.deskripsi = line.substring(idx + 1).trim();
+    // ── Deskripsi: ... atau Desc: ... ──
+    else if (/deskripsi\s*:/.test(lower) || /desc\s*:/.test(lower)) {
+      var idx = trimmed.indexOf(':');
+      if (idx >= 0) {
+        var val = trimmed.substring(idx + 1).trim();
+        if (val && !/^\[.*\]$/.test(val) && val !== '[jelaskan kerusakan]' && val !== '(jelaskan kerusakan)') {
+          result.deskripsi = val;
+          Logger.log('PARSE: Found deskripsi="' + val + '"');
+        }
+      }
     }
-    // Foto: ...
-    else if (lower.indexOf('foto:') >= 0 || lower.indexOf('foto :') >= 0) {
-      var idx = line.indexOf(':');
-      if (idx >= 0) result.foto_kerusakan = line.substring(idx + 1).trim();
+    // ── Foto: ... ──
+    else if (/foto\s*:/.test(lower)) {
+      var idx = trimmed.indexOf(':');
+      if (idx >= 0) {
+        var val = trimmed.substring(idx + 1).trim();
+        // Skip placeholder "(kirim foto jika ada)"
+        if (val && !/^\[.*\]$/.test(val) && !/^\(.*\)$/.test(val) && val !== '(kirim foto jika ada)') {
+          result.foto_kerusakan = val;
+          Logger.log('PARSE: Found foto_kerusakan="' + val + '"');
+        }
+      }
     }
   });
   
-  // Validasi: minimal harus ada Nama, Lokasi, dan Deskripsi
+  // ── VALIDASI ───────────────────────────────────────────
   if (!result.nama_customer || !result.lokasi || !result.deskripsi) {
+    Logger.log('PARSE FAILED ⛔: nama_customer="' + (result.nama_customer || '') + 
+               '", lokasi="' + (result.lokasi || '') + 
+               '", deskripsi="' + (result.deskripsi || '') + '"');
+    Logger.log('PARSE FAILED: Full preprocessed message: ' + message.substring(0, 500));
     return null;
   }
   
-  // Map kategori ke sistem
+  Logger.log('PARSE SUCCESS ✅: nama_customer="' + result.nama_customer + 
+             '", lokasi="' + result.lokasi + 
+             '", kategori="' + (result.kategori || '') + 
+             '", deskripsi="' + result.deskripsi.substring(0, 100) + '"');
+  
+  // ── MAP KATEGORI ───────────────────────────────────────
   if (result.kategori) {
     var categoryMap = {
       'electrical': 'Electrical',
@@ -996,7 +1283,7 @@ function parseComplaintFromMessage(message) {
     result.kategori = 'Lainnya';
   }
   
-  // Default urgensi — jika sudah diisi via Prioritas, map ke sistem
+  // ── MAP URGENSI ────────────────────────────────────────
   if (result.urgensi) {
     var urgensiMap = {
       'tinggi': 'High',
@@ -1021,23 +1308,154 @@ function parseComplaintFromMessage(message) {
 /**
  * [FORMAT] Panduan format pengiriman komplain kerusakan via WA
  * Dikirim otomatis saat customer mengirim pesan non-rating ke nomor GA
+ * 
+ * V2 — Improved:
+ * - Checkbox (☑/☐) untuk field wajib vs opsional
+ * - Instruksi lebih jelas: "Balas pesan ini, isi, kirim"
+ * - Contoh langsung di dalam placeholder [cth: ...]
+ * - Tidak ada contoh terpisah agar parser tidak bingung
  */
 function getComplaintFormatGuide() {
-  return '🏢 General Affair — Laporan Kerusakan\n' +
+  // NOTE: PENTING! Jangan tambah baris format di luar blok ⎯⎯
+  // karena parser membaca baris "Nama:", "Lokasi:", dll.
+  // Hanya baris di DALAM blok ⎯⎯ yang boleh punya format.
+  return '🏢 GA Operations — Laporan Kerusakan\n' +
     '━━━━━━━━━━━━━━━━━━━━\n\n' +
-    'Halo! Terima kasih telah menghubungi kami. 👋\n\n' +
-    'Untuk melaporkan kerusakan, silakan kirim pesan dengan format berikut:\n\n' +
-    '⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n' +
-    'Nama: [nama Anda]\n' +
-    'Lokasi: [lokasi kerusakan]\n' +
-    'Kategori: [Electrical/Plumbing/AC & HVAC/Furniture/IT \u0026 Network/Lainnya]\n' +
-    'Deskripsi: [jelaskan kerusakan]\n' +
-    'Foto: (kirim foto jika ada)\n' +
-    '⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n\n' +
-    '⏱️ Tim teknis kami akan segera menindaklanjuti laporan Anda.\n' +
+    'Halo! Ingin lapor kerusakan? 👋\n\n' +
+    'Cara mudah: **balas pesan ini**, isi format di bawah, lalu kirim.\n\n' +
+    '⎯⎯⎯⎯ ISI FORMAT ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n' +
+    '☑ Nama: [cth: Bambang]\n' +
+    '☑ Lokasi: [cth: Lantai 2, Kamar 205]\n' +
+    '☑ Kategori: [Electrical/Plumbing/AC & HVAC/Furniture/IT \u0026 Network/Lainnya]\n' +
+    '☑ Deskripsi: [cth: Lampu kamar mati sejak pagi]\n' +
+    '☐ Foto: (opsional)\n' +
+    '⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n\n' +
+    '⏱️ Tim teknis akan segera menindaklanjuti.\n' +
     'Terima kasih! 🙏\n' +
     '━━━━━━━━━━━━━━━━━━━━\n' +
     CONFIG.ORG_NAME;
+}
+
+// ─── DEDUPLIKASI FORMAT GUIDE ────────────────────────────
+
+/**
+ * Kirim format guide WA hanya sekali per sender dalam periode 2 jam
+ * Mencegah notif template muncul berkali-kali ke customer yang sama
+ * @param {string} sender - Nomor WA sender
+ * @return {boolean} true jika guide berhasil dikirim, false jika sudah dikirim sebelumnya (skip)
+ */
+function sendFormatGuideOnce(sender) {
+  // Normalisasi nomor
+  var phone = normalizePhone(sender);
+  if (!phone) {
+    Logger.log('GUIDE-DEDUP: sender kosong, skip');
+    return false;
+  }
+
+  try {
+    var cache = CacheService.getScriptCache();
+    var cacheKey = 'guide_sent_' + phone;
+    var alreadySent = cache.get(cacheKey);
+
+    if (alreadySent === '1') {
+      Logger.log('GUIDE-DEDUP: Guide already sent to ' + phone + ' in last 2 hours. Skipping.');
+      return false;
+    }
+
+    // Kirim panduan
+    sendWhatsApp(phone, getComplaintFormatGuide());
+    
+    // Simpan ke cache (berlaku 2 jam)
+    cache.put(cacheKey, '1', 7200); // 7200 detik = 2 jam
+    
+    Logger.log('GUIDE-DEDUP: Guide sent to ' + phone + ', cached for 2 hours.');
+    return true;
+  } catch (e) {
+    // Jika cache error, tetap kirim guide (fail-safe)
+    Logger.log('GUIDE-DEDUP: Cache error for ' + phone + ': ' + e.message);
+    sendWhatsApp(phone, getComplaintFormatGuide());
+    return true;
+  }
+}
+
+
+// ─── UPLOAD FOTO KE GOOGLE DRIVE ────────────────────────────
+
+/**
+ * Upload foto (base64) ke Google Drive, return URL publik
+ * Foto disimpan di folder "GA_Operations_Photos"
+ * 
+ * @param {string} base64Data - Data gambar dalam format base64 (dengan atau tanpa prefix data:image)
+ * @param {string} fileName - Nama file (optional, auto-generate jika kosong)
+ * @return {Object} { url, fileId, fileName } atau error
+ */
+function uploadPhotoToDrive(base64Data, fileName) {
+  try {
+    if (!base64Data) throw new Error('Data foto kosong.');
+
+    // Ekstrak data base64 (handle prefix data:image/...;base64,)
+    var rawData = base64Data;
+    var mimeType = 'image/png'; // default
+    
+    if (base64Data.indexOf('base64,') >= 0) {
+      // Format: data:image/jpeg;base64,/9j/4AAQ...
+      var matches = base64Data.match(/^data:([^;]+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+        mimeType = matches[1];
+        rawData = matches[2];
+      } else {
+        // Fallback: split manual
+        var parts = base64Data.split('base64,');
+        rawData = parts[parts.length - 1];
+        var mimeMatch = base64Data.match(/^data:([^;]+);/);
+        if (mimeMatch) mimeType = mimeMatch[1];
+      }
+    }
+
+    // Generate nama file jika kosong
+    if (!fileName || fileName.trim() === '') {
+      var ext = mimeType === 'image/jpeg' || mimeType === 'image/jpg' ? 'jpg' : 
+                mimeType === 'image/png' ? 'png' :
+                mimeType === 'image/gif' ? 'gif' :
+                mimeType === 'image/webp' ? 'webp' : 'png';
+      fileName = 'foto_perbaikan_' + Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyyMMdd_HHmmss') + '.' + ext;
+    }
+
+    // Decode base64 ke blob
+    var decoded = Utilities.base64Decode(rawData);
+    var blob = Utilities.newBlob(decoded, mimeType, fileName);
+
+    // Cari folder "GA_Operations_Photos", buat jika belum ada
+    var folderName = 'GA_Operations_Photos';
+    var folders = DriveApp.getFoldersByName(folderName);
+    var folder;
+    if (folders.hasNext()) {
+      folder = folders.next();
+    } else {
+      folder = DriveApp.createFolder(folderName);
+      Logger.log('Created folder: ' + folderName);
+    }
+
+    // Buat file di folder
+    var file = folder.createFile(blob);
+    
+    // Set permission: Anyone with link can view
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+    var fileUrl = file.getUrl();
+    
+    Logger.log('Photo uploaded: ' + fileName + ' → ' + fileUrl);
+
+    return successResponse({
+      url: fileUrl,
+      fileId: file.getId(),
+      fileName: fileName
+    }, 'Foto berhasil diupload.');
+
+  } catch (e) {
+    Logger.log('uploadPhotoToDrive Error: ' + e.message);
+    return errorResponse('Gagal upload foto: ' + e.message);
+  }
 }
 
 // ─── WHATSAPP TEST & WEBHOOK ────────────────────────────────
@@ -1084,10 +1502,19 @@ function testWhatsAppConnection(testPhone) {
  * 
  * Format webhook Fonnte (FLAT object, bukan array!):
  * { "sender": "628xxx", "message": "5", "name": "...", "inboxid": "...", "timestamp": "..." }
+ * 
+ * V2 — Improved:
+ * - Logging detail di setiap langkah
+ * - Fallback: coba field `pesan` jika `message` kosong/tidak ter-parse
+ * - Fallback: coba field `text` jika semua gagal
+ * - Handle quoted reply dari template dengan preprocessing
  */
 function handleIncomingWhatsApp(payload) {
   try {
-    Logger.log('Incoming WA Webhook RAW: ' + JSON.stringify(payload));
+    Logger.log('=== WA WEBHOOK INCOMING ===');
+    Logger.log('RAW payload keys: ' + Object.keys(payload || {}).join(', '));
+    Logger.log('RAW payload sender=' + (payload.sender || '') + ', name=' + (payload.name || ''));
+    Logger.log('RAW message preview="' + ((payload.message || '').substring(0, 200)) + '"');
 
     if (!payload) {
       return errorResponse('No payload received.');
@@ -1099,50 +1526,89 @@ function handleIncomingWhatsApp(payload) {
     var messages = [];
     
     if (payload.data && Array.isArray(payload.data)) {
-      // Format lama (untuk backward compatibility)
       messages = payload.data;
+      Logger.log('FMT: array format (payload.data)');
     } else if (payload.sender) {
-      // Format flat object dari Fonnte
       messages = [payload];
+      Logger.log('FMT: flat object format (payload.sender)');
     } else {
-      Logger.log('WA Webhook: Unknown payload format, trying best effort');
-      // Coba cari array of messages di berbagai path
+      Logger.log('FMT: unknown format, trying best effort');
       for (var key in payload) {
         if (Array.isArray(payload[key])) {
           messages = payload[key];
+          Logger.log('FMT: found array at payload.' + key);
           break;
         }
       }
+    }
+
+    if (messages.length === 0) {
+      Logger.log('WA Webhook: No messages extracted from payload');
+      return successResponse([], 'No messages found.');
     }
 
     Logger.log('WA Webhook: Processing ' + messages.length + ' message(s)');
     var results = [];
 
     messages.forEach(function(msg) {
-      // Ekstrak sender & message (handle berbagai format)
-      var sender = normalizePhone(msg.sender);
-      var message = (typeof msg.message === 'string' ? msg.message : 
-                     (msg.message && msg.message.text ? msg.message.text : ''));
-      message = message.trim();
+      // ─── EKSTRAK SENDER ────────────────────────────────
+      // Coba berbagai field yang mungkin berisi nomor pengirim
+      var sender = normalizePhone(msg.sender || msg.pengirim || msg.from || '');
+      
+      // ─── EKSTRAK PESAN ────────────────────────────────
+      // Prioritas: message > pesan > text
+      var message = '';
+      
+      if (typeof msg.message === 'string' && msg.message.trim()) {
+        message = msg.message.trim();
+        Logger.log('MSG: using msg.message (length=' + message.length + ')');
+      } else if (typeof msg.pesan === 'string' && msg.pesan.trim()) {
+        message = msg.pesan.trim();
+        Logger.log('MSG: using msg.pesan (length=' + message.length + ')');
+      } else if (typeof msg.text === 'string' && msg.text.trim()) {
+        message = msg.text.trim();
+        Logger.log('MSG: using msg.text (length=' + message.length + ')');
+      } else if (msg.message && typeof msg.message.text === 'string') {
+        message = msg.message.text.trim();
+        Logger.log('MSG: using msg.message.text (length=' + message.length + ')');
+      }
 
-      Logger.log('WA Webhook: sender="' + sender + '", message="' + message + '"');
+      Logger.log('WA Webhook: sender="' + sender + '", message_preview="' + message.substring(0, 150) + '"');
 
-      if (!sender || !message) return;
+      if (!sender) {
+        Logger.log('WA Webhook: SKIP - no sender found');
+        return;
+      }
+      if (!message) {
+        Logger.log('WA Webhook: SKIP - empty message for sender ' + sender);
+        return;
+      }
+      
+      // ─── SKIP PESAN DARI SISTEM SENDIRI ────────────────
+      // Fonnte kadang kirim webhook dari pesan yg dikirim oleh device sendiri
+      // (misalnya delivery receipt atau pesan otomatis yg dikirim sistem)
+      // Cek: sender == device number (GA punya nomor sendiri)
+      var ownNumber = normalizePhone(payload.device || payload.username || '');
+      if (ownNumber && sender === ownNumber) {
+        Logger.log('WA Webhook: SKIP - self-message (own device), sender=' + sender + ', device=' + ownNumber);
+        return;
+      }
 
-      // Cek apakah ini balasan survei (angka 1-5)
-      var rating = parseInt(message, 10);
+      // ─── CEK RATING SURVEI ─────────────────────────────
+      // Coba parse angka dari awal pesan (trim dulu, handle spasi/enter di depan)
+      var messageClean = message.replace(/^[\s\n\r]+/, '').trim();
+      var rating = parseInt(messageClean, 10);
+      
       if (rating >= 1 && rating <= 5) {
-        // Cari tiket terakhir yang completed & belum diberi rating, cocok dengan nomor ini
+        Logger.log('SURVEY: Detected rating=' + rating + ' from sender=' + sender);
+        
         var mainData = getSheetData(CONFIG.SHEETS.MAIN_DATA);
         var foundTicket = null;
 
         for (var i = 0; i < mainData.length; i++) {
-          // Normalisasi nomor dari sheet juga (fix: sheet simpan sebagai number, sender sebagai string)
           var rowPhone = normalizePhone(mainData[i].no_wa);
           
-          // Cari tiket dengan nomor cocok, sudah selesai (status_sla terisi), dan belum dinilai
           if (rowPhone === sender && mainData[i].status_sla !== '' && !mainData[i].rating_survei) {
-            // Ambil yang paling terbaru
             if (!foundTicket || new Date(mainData[i].timestamp) > new Date(foundTicket.timestamp)) {
               foundTicket = mainData[i];
             }
@@ -1150,11 +1616,9 @@ function handleIncomingWhatsApp(payload) {
         }
 
         if (foundTicket) {
-          // Simpan rating ke spreadsheet
           updateCell(CONFIG.SHEETS.MAIN_DATA, foundTicket._rowIndex, 'rating_survei', rating);
-          Logger.log('WA Webhook: Rating ' + rating + ' saved for ticket ' + foundTicket.tiket_id);
+          Logger.log('SURVEY: Rating ' + rating + ' saved for ticket ' + foundTicket.tiket_id);
 
-          // Kirim konfirmasi ke customer
           var confirmEmoji = ['', '😡', '😞', '😐', '😊', '🤩'];
           var confirmMsg = '✅ *Terima kasih!*\n\n' +
             'Penilaian Anda: ' + rating + ' ' + (confirmEmoji[rating] || '') + '\n' +
@@ -1168,62 +1632,102 @@ function handleIncomingWhatsApp(payload) {
             tiket_id: foundTicket.tiket_id,
             rating: rating
           });
+          return; // ← penting: sudah diproses
         } else {
-          // Tidak ada tiket yang menunggu survei
-          Logger.log('WA Webhook: No pending survey ticket found for ' + sender);
-          var noTicketMsg = 'Halo! Terima kasih telah menghubungi ' + CONFIG.APP_NAME + '.\n' +
-            'Jika Anda memiliki pertanyaan, silakan hubungi tim GA langsung.';
-          sendWhatsApp(sender, noTicketMsg);
-          results.push({ sender: sender, action: 'unknown' });
+          Logger.log('SURVEY: No pending survey ticket found for ' + sender + ', fallthrough to complaint parsing');
+          // Jangan return — fallthrough ke complaint parsing
+          // Mungkin angka 1-5 adalah bagian dari format komplain
+        }
+      }
+
+      // ─── PARSE KOMPLAIN ─────────────────────────────────
+      Logger.log('COMPLAINT: Attempting to parse message from sender=' + sender);
+      var complaintData = parseComplaintFromMessage(message);
+      
+      // Jika gagal parse, coba pakai msg.pesan sebagai fallback
+      if (!complaintData && msg.pesan && msg.pesan !== msg.message) {
+        Logger.log('COMPLAINT: Retry with msg.pesan field');
+        complaintData = parseComplaintFromMessage(msg.pesan);
+      }
+      
+      // Jika attachment foto dari Fonnte (msg.url), inject
+      if (complaintData) {
+        // Cek apakah foto dari attachment
+        if (msg.url && !complaintData.foto_kerusakan) {
+          complaintData.foto_kerusakan = msg.url;
+          Logger.log('COMPLAINT: Added photo url=' + msg.url);
+        }
+        
+        // Data komplain ditemukan - buat tiket otomatis
+        complaintData.no_wa = sender;
+        Logger.log('COMPLAINT: Parsed successfully: ' + JSON.stringify(complaintData));
+        
+        try {
+          var ticketResult = createComplaintFromWhatsApp(complaintData);            if (ticketResult && ticketResult.success) {
+            var tiketId = ticketResult.data.tiket_id;
+            var waSent = ticketResult.data.wa_notification_sent;
+            Logger.log('COMPLAINT: Ticket created: ' + tiketId + ', WA sent: ' + waSent);
+            
+            // ── KIRIM KONFIRMASI JIKA NOTIFIKASI GAGAL ────
+            // createComplaintFromWhatsApp sudah kirim notifikasi detail
+            // via sendNewTicketNotification ke cleanPhone (= sender).
+            // Jika gagal, kirim fallback konfirmasi via nomor Fonnte sender
+            // supaya customer tetap dapat balasan.
+            if (!waSent) {
+              sendTicketConfirmation(
+                sender,
+                complaintData.nama_customer || 'Customer',
+                tiketId,
+                complaintData.kategori || 'Lainnya'
+              );
+              Logger.log('COMPLAINT: Fallback confirmation sent to ' + sender + ' for ticket ' + tiketId);
+            }
+            
+            results.push({
+              sender: sender,
+              action: 'auto_ticket_created',
+              tiket_id: tiketId,
+              wa_sent: waSent
+            });
+          } else {
+            var errMsg = ticketResult ? ticketResult.error : 'Unknown error';
+            Logger.log('COMPLAINT: Failed to create ticket: ' + errMsg);
+            if (sendFormatGuideOnce(sender)) {
+              results.push({ sender: sender, action: 'auto_reply_sent' });
+            } else {
+              results.push({ sender: sender, action: 'auto_reply_skipped_duplicate' });
+            }
+          }
+        } catch (ticketErr) {
+          Logger.log('COMPLAINT: Ticket creation error: ' + ticketErr.message);
+          if (sendFormatGuideOnce(sender)) {
+            results.push({ sender: sender, action: 'auto_reply_sent' });
+          } else {
+            results.push({ sender: sender, action: 'auto_reply_skipped_duplicate' });
+          }
         }
       } else {
-        // Coba parse sebagai format komplain
-        var complaintData = parseComplaintFromMessage(message);
-        
-        // Jika ada attachment foto dari Fonnte (msg.url), masukkan
-        if (complaintData && msg.url && !complaintData.foto_kerusakan) {
-          complaintData.foto_kerusakan = msg.url;
-        }
-        
-        if (complaintData) {
-          // Data komplain ditemukan - buat tiket otomatis
-          complaintData.no_wa = sender;
-          Logger.log('WA Webhook: Parsed complaint from ' + sender + ': ' + JSON.stringify(complaintData));
-          
-          try {
-            var ticketResult = createComplaintFromWhatsApp(complaintData);
-            if (ticketResult && ticketResult.success) {
-              var tiketId = ticketResult.data.tiket_id;
-              Logger.log('WA Webhook: Ticket created: ' + tiketId + ' (notif via sendNewTicketNotification)');
-              
-              results.push({
-                sender: sender,
-                action: 'auto_ticket_created',
-                tiket_id: tiketId
-              });
-            } else {
-              // Gagal buat tiket - kirim panduan
-              Logger.log('WA Webhook: Failed to create ticket: ' + (ticketResult ? ticketResult.error : 'Unknown error'));
-              sendWhatsApp(sender, getComplaintFormatGuide());
-              results.push({ sender: sender, action: 'auto_reply_sent' });
-            }
-          } catch (ticketErr) {
-            Logger.log('WA Webhook: Ticket creation error: ' + ticketErr.message);
-            sendWhatsApp(sender, getComplaintFormatGuide());
-            results.push({ sender: sender, action: 'auto_reply_sent' });
-          }
-        } else {
-          // Bukan format komplain - kirim panduan
-          Logger.log('WA Webhook: Auto-reply (format guide) to ' + sender);
-          sendWhatsApp(sender, getComplaintFormatGuide());
+        // Bukan format komplain - kirim panduan (dengan deduplikasi)
+        Logger.log('COMPLAINT: Not a complaint format for ' + sender);
+        if (sendFormatGuideOnce(sender)) {
           results.push({ sender: sender, action: 'auto_reply_sent' });
+        } else {
+          Logger.log('COMPLAINT: SKIP guide for ' + sender + ' (already sent recently)');
+          results.push({ sender: sender, action: 'auto_reply_skipped_duplicate' });
         }
       }
     });
+    
+    // Cache info webhook untuk debugging via ?webhook=1
+    cacheWebhookPayload(payload, 'processed', 'ok');
 
+    Logger.log('=== WA WEBHOOK DONE: ' + results.length + ' result(s) ===');
     return successResponse(results, 'Incoming messages processed.');
   } catch (e) {
-    Logger.log('WA Webhook Error: ' + e.message);
+    Logger.log('=== WA WEBHOOK ERROR ===');
+    Logger.log('Error: ' + e.message);
+    Logger.log('Stack: ' + e.stack);
+    cacheWebhookPayload(payload || {}, 'error', e.message);
     return errorResponse('Webhook error: ' + e.message);
   }
 }

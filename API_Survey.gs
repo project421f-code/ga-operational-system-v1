@@ -46,7 +46,7 @@ var SURVEY_CONFIG = {
  */
 function getSurveyConfig() {
   try {
-    var data = getSheetData('Master_Survey_Config');
+    var data = getCachedSheetData('Master_Survey_Config', 300);
     if (!data || data.length === 0) {
       return successResponse(SURVEY_CONFIG);
     }
@@ -252,7 +252,7 @@ function submitSurvey(payload) {
 function getGASurveyStats() {
   try {
     var user = getActiveUserSession();
-    var data = getSheetData(CONFIG.SHEETS.SURVEY_GA);
+    var data = getCachedSheetData(CONFIG.SHEETS.SURVEY_GA, 30);
 
     if (data.length === 0) {
       return successResponse({
@@ -428,7 +428,7 @@ function getGASurveyStats() {
 function getSurveyStats(periodeFilter) {
   try {
     var user = getActiveUserSession();
-    var data = getSheetData(CONFIG.SHEETS.SURVEY_GA);
+    var data = getCachedSheetData(CONFIG.SHEETS.SURVEY_GA, 30);
 
     if (periodeFilter) {
       data = data.filter(function(d) { return d.periode === periodeFilter; });
