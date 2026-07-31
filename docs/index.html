@@ -4,300 +4,80 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GA Operations | General Affair</title>
-  <meta name="description" content="Sistem Manajemen Operasional General Affair - Otomatisasi, Integrasi & Manajemen Operasional GA">
+  <meta name="description" content="Sistem Manajemen Operasional General Affair">
   <meta name="theme-color" content="#6366f1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background: linear-gradient(135deg, #0a0f1e 0%, #111936 50%, #0d1229 100%);
       color: #e0e7ff;
-      line-height: 1.6;
       min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 20px;
     }
-    a { color: #818cf8; text-decoration: none; }
-    a:hover { color: #a5b4fc; }
-
-    /* Hero */
-    .hero {
-      text-align: center; padding: 80px 20px 60px;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      position: relative; overflow: hidden;
-    }
-    .hero::before {
-      content: ''; position: absolute; top: -50%; left: -50%;
-      width: 200%; height: 200%;
-      background: radial-gradient(circle at 50% 50%, rgba(99,102,241,0.05) 0%, transparent 50%);
-    }
-    .hero-logo {
-      width: 72px; height: 72px; margin: 0 auto 24px;
+    .logo {
+      width: 72px; height: 72px;
       background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      border-radius: 18px; display: flex;
-      align-items: center; justify-content: center;
-      font-size: 32px; position: relative;
+      border-radius: 18px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px;
       box-shadow: 0 0 40px rgba(99,102,241,0.3);
-      animation: float 3s ease-in-out infinite;
+      margin-bottom: 24px;
     }
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-6px); }
-    }
-    .hero h1 {
-      font-size: 2.5rem; font-weight: 800;
+    h1 {
+      font-size: 2.2rem; font-weight: 800;
       background: linear-gradient(135deg, #e0e7ff, #818cf8);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       background-clip: text;
+      margin-bottom: 12px;
     }
-    .hero p {
-      color: #94a3b8; font-size: 1.1rem; max-width: 600px; margin: 12px auto 0;
-    }
-    .hero-badges {
-      display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
-      margin-top: 24px;
-    }
-    .hero-badge {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 6px 14px; border-radius: 20px;
-      font-size: 0.78rem; font-weight: 500;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.1);
-      color: #cbd5e1;
-    }
-    .hero-badge .dot {
-      width: 6px; height: 6px; border-radius: 50%;
-    }
-    .hero-badge .dot.green { background: #10b981; }
-    .hero-badge .dot.blue { background: #6366f1; }
-    .hero-badge .dot.amber { background: #f59e0b; }
-
-    .hero-cta {
-      display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
-      margin-top: 32px;
+    p {
+      color: #94a3b8;
+      font-size: 1rem;
+      max-width: 460px;
+      margin-bottom: 32px;
+      line-height: 1.6;
     }
     .btn {
       display: inline-flex; align-items: center; gap: 8px;
-      padding: 12px 28px; border-radius: 12px;
-      font-family: inherit; font-size: 0.9rem; font-weight: 600;
-      cursor: pointer; transition: all 0.25s ease;
-      text-decoration: none;
-    }
-    .btn-primary {
+      padding: 14px 36px; border-radius: 12px;
       background: linear-gradient(135deg, #6366f1, #818cf8);
-      color: white; border: none;
-    }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(99,102,241,0.4); }
-    .btn-outline {
-      background: transparent; color: #e0e7ff;
-      border: 1px solid rgba(255,255,255,0.2);
-    }
-    .btn-outline:hover { background: rgba(255,255,255,0.06); transform: translateY(-2px); }
-    .btn-sm { padding: 8px 18px; font-size: 0.82rem; }
-
-    /* Section */
-    .section { max-width: 1000px; margin: 0 auto; padding: 60px 20px; }
-    .section-title {
-      font-size: 1.5rem; font-weight: 700; margin-bottom: 8px;
-    }
-    .section-sub {
-      color: #94a3b8; font-size: 0.9rem; margin-bottom: 32px;
-    }
-
-    /* Feature Grid */
-    .feature-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 16px;
-    }
-    .feature-card {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 16px; padding: 24px;
+      color: #fff;
+      font-family: inherit; font-size: 1rem; font-weight: 700;
+      text-decoration: none;
       transition: all 0.25s ease;
     }
-    .feature-card:hover {
-      background: rgba(255,255,255,0.06);
-      border-color: rgba(255,255,255,0.15);
+    .btn:hover {
       transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(99,102,241,0.4);
     }
-    .feature-icon {
-      width: 48px; height: 48px;
-      background: rgba(99,102,241,0.12);
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.4rem; margin-bottom: 14px;
-    }
-    .feature-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; }
-    .feature-card p { font-size: 0.85rem; color: #94a3b8; line-height: 1.6; }
-    .feature-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
-    .feature-tag {
-      font-size: 0.68rem; font-weight: 600;
-      padding: 3px 10px; border-radius: 12px;
-      background: rgba(99,102,241,0.12); color: #818cf8;
-    }
-
-    /* Tech Stack */
-    .tech-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 12px;
-    }
-    .tech-card {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 12px; padding: 16px 20px;
-      display: flex; align-items: center; gap: 12px;
-    }
-    .tech-icon { font-size: 1.5rem; }
-    .tech-info h4 { font-size: 0.85rem; font-weight: 600; }
-    .tech-info p { font-size: 0.72rem; color: #64748b; }
-
-    /* Footer */
     .footer {
-      text-align: center; padding: 40px 20px;
-      border-top: 1px solid rgba(255,255,255,0.06);
+      position: absolute; bottom: 20px;
       color: #475569; font-size: 0.8rem;
     }
-    .footer-links { display: flex; justify-content: center; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
-    .footer-links a { color: #64748b; font-size: 0.82rem; }
-    .footer-links a:hover { color: #94a3b8; }
+    .footer a { color: #64748b; text-decoration: none; }
+    .footer a:hover { color: #94a3b8; }
 
-    /* Responsive */
-    @media (max-width: 600px) {
-      .hero h1 { font-size: 1.8rem; }
-      .hero { padding: 50px 16px 40px; }
-      .section { padding: 40px 16px; }
-      .feature-grid { grid-template-columns: 1fr; }
+    @media (max-width: 480px) {
+      h1 { font-size: 1.7rem; }
+      .btn { padding: 12px 28px; font-size: 0.9rem; }
     }
   </style>
 </head>
 <body>
-
-  <!-- HERO -->
-  <div class="hero">
-    <div class="hero-logo">🏢</div>
-    <h1>GA Operations</h1>
-    <p>Sistem Manajemen Operasional General Affair — Otomatisasi, Integrasi & Digitalisasi Operasional GA</p>
-    <div class="hero-badges">
-      <span class="hero-badge"><span class="dot green"></span> Production Ready</span>
-      <span class="hero-badge"><span class="dot blue"></span> Google Apps Script</span>
-      <span class="hero-badge"><span class="dot amber"></span> PWA Support</span>
-    </div>
-    <div class="hero-cta">
-      <a href="https://script.google.com/macros/s/AKfycbyu34f5V2hKqfg2cCtoz_f_ug2ywsNTSg4D9KCw8d30k0fl9d-SRzxtuISJBrXjS_2p/exec" class="btn btn-primary">🚀 Buka Aplikasi</a>
-      <a href="https://github.com/project421f-code/ga-operational-system-v1" class="btn btn-outline">📦 Lihat di GitHub</a>
-      <a href="#features" class="btn btn-outline">✨ Fitur</a>
-    </div>
-  </div>
-
-  <!-- FEATURES -->
-  <div class="section" id="features">
-    <h2 class="section-title">✨ Fitur Unggulan</h2>
-    <p class="section-sub">Ekosistem terintegrasi untuk mengelola seluruh operasional General Affair</p>
-
-    <div class="feature-grid">
-      <div class="feature-card">
-        <div class="feature-icon">🔧</div>
-        <h3>Tiket Komplain</h3>
-        <p>Laporan kerusakan via WhatsApp auto-create tiket, notifikasi real-time ke teknisi & customer.</p>
-        <div class="feature-tags"><span class="feature-tag">WhatsApp</span><span class="feature-tag">In-Chat Survey</span></div>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">📊</div>
-        <h3>SLA & KPI</h3>
-        <p>Target penyelesaian dinamis, dashboard KPI tim maintenance, security, dan housekeeping.</p>
-        <div class="feature-tags"><span class="feature-tag">SLA Engine</span><span class="feature-tag">Dashboard</span></div>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">🛡️</div>
-        <h3>Log Patroli</h3>
-        <p>Scan QR Code checkpoint, catat temuan, inspeksi kendaraan bulanan, & KPI security.</p>
-        <div class="feature-tags"><span class="feature-tag">QR Scanner</span><span class="feature-tag">Checkpoint</span></div>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">📅</div>
-        <h3>Booking Aset</h3>
-        <p>Pinjam ruangan & kendaraan — validasi bentrok otomatis tanpa persetujuan manual.</p>
-        <div class="feature-tags"><span class="feature-tag">Zero Admin</span><span class="feature-tag">Auto-Approval</span></div>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">✅</div>
-        <h3>Housekeeping</h3>
-        <p>Checklist harian CS, audit supervisor, general cleaning, & KPI housekeeping.</p>
-        <div class="feature-tags"><span class="feature-tag">Checklist</span><span class="feature-tag">Audit</span></div>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">🏠</div>
-        <h3>Manajemen Kos</h3>
-        <p>Monitoring kamar, check-in/out, persiapan kamar, & tracker cleaning lengkap.</p>
-        <div class="feature-tags"><span class="feature-tag">Kos</span><span class="feature-tag">Tracker</span></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TECH STACK -->
-  <div class="section">
-    <h2 class="section-title">🛠️ Tech Stack</h2>
-    <p class="section-sub">Dibangun dengan teknologi Google Workspace & modern web stack</p>
-
-    <div class="tech-grid">
-      <div class="tech-card">
-        <span class="tech-icon">📗</span>
-        <div class="tech-info"><h4>Google Apps Script</h4><p>Backend & Logika Bisnis</p></div>
-      </div>
-      <div class="tech-card">
-        <span class="tech-icon">📊</span>
-        <div class="tech-info"><h4>Google Sheets</h4><p>Database & Storage</p></div>
-      </div>
-      <div class="tech-card">
-        <span class="tech-icon">🌐</span>
-        <div class="tech-info"><h4>HTML + CSS + JS</h4><p>Frontend Web App</p></div>
-      </div>
-      <div class="tech-card">
-        <span class="tech-icon">📱</span>
-        <div class="tech-info"><h4>Fonnte API</h4><p>WhatsApp Gateway</p></div>
-      </div>
-      <div class="tech-card">
-        <span class="tech-icon">📈</span>
-        <div class="tech-info"><h4>Chart.js</h4><p>Data Visualization</p></div>
-      </div>
-      <div class="tech-card">
-        <span class="tech-icon">📷</span>
-        <div class="tech-info"><h4>QR Code</h4><p>Scanner & Generator</p></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- CTA -->
-  <div class="section" style="text-align:center;">
-    <h2 class="section-title" style="font-size:1.3rem;">🚀 Siap Digunakan</h2>
-    <p class="section-sub" style="max-width:500px;margin:8px auto 24px;">
-      Deploy sebagai Google Apps Script Web App — langsung terintegrasi dengan Google Sheets & WhatsApp.
-    </p>
-    <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
-      <a href="https://script.google.com/macros/s/AKfycbyu34f5V2hKqfg2cCtoz_f_ug2ywsNTSg4D9KCw8d30k0fl9d-SRzxtuISJBrXjS_2p/exec" class="btn btn-primary">🚀 Buka Aplikasi</a>
-      <a href="https://github.com/project421f-code/ga-operational-system-v1" class="btn btn-outline">📦 GitHub Repo</a>
-      <a href="https://github.com/project421f-code/ga-operational-system-v1/blob/master/README.md" class="btn btn-outline">📖 Dokumentasi</a>
-    </div>
-  </div>
-
-  <!-- FOOTER -->
+  <div class="logo">🏢</div>
+  <h1>GA Operations</h1>
+  <p>Sistem Manajemen Operasional General Affair</p>
+  <a href="https://script.google.com/macros/s/AKfycbyu34f5V2hKqfg2cCtoz_f_ug2ywsNTSg4D9KCw8d30k0fl9d-SRzxtuISJBrXjS_2p/exec" class="btn">🚀 Buka Aplikasi</a>
   <div class="footer">
-    <div class="footer-links">
-      <a href="https://github.com/project421f-code/ga-operational-system-v1">GitHub</a>
-      <a href="https://github.com/project421f-code/ga-operational-system-v1/blob/master/PRD_GA_v8.0.md">PRD</a>
-      <a href="https://github.com/project421f-code/ga-operational-system-v1/blob/master/USER_MANUAL.md">User Manual</a>
-      <a href="https://github.com/project421f-code/ga-operational-system-v1/blob/master/ARSITEKTUR.md">Arsitektur</a>
-    </div>
-    <p>GA Operations &bull; General Affair &bull; Dibuat dengan ❤️</p>
+    <a href="https://github.com/project421f-code/ga-operational-system-v1">GitHub</a>
   </div>
-
 </body>
 </html>

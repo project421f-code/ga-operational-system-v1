@@ -38,5 +38,11 @@ jobs:
         run: clasp push -f
 
       - name: Deploy to production
+        # Gunakan deployment ID tetap (GAS_DEPLOYMENT_ID) agar URL web app stabil
+        # dan tidak menumpuk deployment baru setiap push.
         run: |
-          clasp deploy -d "Auto-deploy from GitHub: ${{ github.sha }}"
+          if [ -z "${{ secrets.GAS_DEPLOYMENT_ID }}" ]; then
+            echo "::error::Secret GAS_DEPLOYMENT_ID belum di-set. Jalankan: gh secret set GAS_DEPLOYMENT_ID --repo ${{ github.repository }} --body <deploymentId>"
+            exit 1
+          fi
+          clasp deploy --deploymentId "${{ secrets.GAS_DEPLOYMENT_ID }}" -d "Auto-deploy from GitHub: ${{ github.sha }}"
