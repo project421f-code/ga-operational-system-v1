@@ -266,7 +266,7 @@ function doGet(e) {
         errMsg + '</pre>' +
         '<br>' +
         '<p style="color:#94a3b8">Kemungkinan: Drive App belum di-authorize. Buka GAS Editor → Run fungsi apapun yang pakai DriveApp → Approve izin → deploy ulang.</p>' +
-        '<a href="https://script.google.com/home/projects/1JVL7Xa8P2Pr_QUpHsbvcS_N3tki0fuvFCJtsCx_oP3rMhOTxCjrIsNEl/edit" target="_blank" style="color:#6366f1;display:inline-block;padding:12px 24px;border:1px solid #6366f1;border-radius:10px;text-decoration:none;font-weight:600;margin-top:12px">🔑 Buka GAS Editor</a>' +
+        '<a href="https://script.google.com/home/projects/1O1_LytUfWEc96Mf2Xg_EM6gDy6w3qr0RP9K3---eDXk1QmTQGM8mg051/edit" target="_blank" style="color:#6366f1;display:inline-block;padding:12px 24px;border:1px solid #6366f1;border-radius:10px;text-decoration:none;font-weight:600;margin-top:12px">🔑 Buka GAS Editor</a>' +
         '</body></html>';
       return HtmlService.createHtmlOutput(html).setTitle('Test Drive | GA Operations');
     }
